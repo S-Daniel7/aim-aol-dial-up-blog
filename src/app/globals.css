@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+/*
+ * Global look: solid colors only (no gradients). Palette: white, greys, black, red.
+ * To change the whole site, edit CSS variables under each [data-theme] block, or add a new
+ * block and register the id in src/lib/site-themes.ts
+ */
+
+:root {
+  color-scheme: light;
+}
+
+/* Default = classic */
+:root,
+[data-theme="classic"] {
+  --page-bg: #ffffff;
+  --surface: #f2f2f2;
+  --surface-2: #e8e8e8;
+  --border: #000000;
+  --text: #111111;
+  --muted: #5a5a5a;
+  --accent: #cc0000;
+  --accent-hover: #990000;
+  --accent-contrast: #ffffff;
+  --title-bar: #cc0000;
+  --title-bar-text: #ffffff;
+  --link: #0000cc;
+  --link-hover: #cc0000;
+  --chat-bg: #eeeeee;
+  --font-heading: var(--font-vt323), Tahoma, sans-serif;
+  --font-body: Tahoma, "MS Sans Serif", Geneva, sans-serif;
+  --font-mono-chat: "Courier New", Courier, monospace;
+}
+
+[data-theme="aim-console"] {
+  --page-bg: #1a1a1a;
+  --surface: #2d2d2d;
+  --surface-2: #252525;
+  --border: #ffffff;
+  --text: #f5f5f5;
+  --muted: #b5b5b5;
+  --accent: #ff3333;
+  --accent-hover: #ff6666;
+  --accent-contrast: #111111;
+  --title-bar: #000000;
+  --title-bar-text: #ff3333;
+  --link: #99ccff;
+  --link-hover: #ff6666;
+  --chat-bg: #111111;
+  --font-heading: var(--font-vt323), Tahoma, sans-serif;
+  --font-body: Tahoma, "MS Sans Serif", Geneva, sans-serif;
+  --font-mono-chat: "Courier New", Courier, monospace;
+}
+
+[data-theme="high-contrast"] {
+  --page-bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f0f0f0;
+  --border: #000000;
+  --text: #000000;
+  --muted: #333333;
+  --accent: #cc0000;
+  --accent-hover: #000000;
+  --accent-contrast: #ffffff;
+  --title-bar: #000000;
+  --title-bar-text: #ffffff;
+  --link: #000000;
+  --link-hover: #cc0000;
+  --chat-bg: #f5f5f5;
+  --font-heading: var(--font-vt323), Tahoma, sans-serif;
+  --font-body: Tahoma, "MS Sans Serif", Geneva, sans-serif;
+  --font-mono-chat: "Courier New", Courier, monospace;
+
+}
+
+@theme inline {
+  --color-page-bg: var(--page-bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-title-bar: var(--title-bar);
+  --color-title-bar-text: var(--title-bar-text);
+  --color-link: var(--link);
+  --color-link-hover: var(--link-hover);
+  --color-chat-bg: var(--chat-bg);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-mono-chat);
+  --font-heading: var(--font-heading);
+}
+
+html,
+body {
+  background: var(--page-bg);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+a {
+  color: var(--link);
+}
+
+a:hover {
+  color: var(--link-hover);
+}
