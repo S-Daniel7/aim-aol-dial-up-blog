@@ -41,3 +41,17 @@ export function formatEstDayHeading(iso: string): string {
     year: "numeric",
   }).format(new Date(iso));
 }
+
+/** EST calendar key, e.g. "2026-04-17", for date filtering. */
+export function formatEstDateKey(iso: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: EST,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(iso));
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+  return `${year}-${month}-${day}`;
+}

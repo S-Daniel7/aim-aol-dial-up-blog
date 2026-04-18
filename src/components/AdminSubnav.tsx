@@ -16,6 +16,13 @@ export function AdminSubnav() {
       >
         Live feed
       </Link>
+      <span className="text-muted">·</span>
+      <Link
+        href="/admin/board"
+        className="text-link no-underline hover:text-link-hover"
+      >
+        Board
+      </Link>
     </nav>
   );
 }

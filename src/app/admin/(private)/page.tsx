@@ -1,4 +1,5 @@
 import { AdminComposer } from "@/components/AdminComposer";
+import { AdminPostManager } from "@/components/AdminPostManager";
 
 export default function AdminDashboardPage() {
   return (
@@ -10,6 +11,8 @@ export default function AdminDashboardPage() {
         New chat-room post
       </h1>
       <AdminComposer />
+      <div className="my-10 border-t-2 border-border" />
+      <AdminPostManager />
     </div>
   );
 }

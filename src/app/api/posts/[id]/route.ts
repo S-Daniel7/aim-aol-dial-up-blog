@@ -2,52 +2,12 @@ import { verifyAdminRequest } from "@/lib/admin-session";
 import { parseChatLines } from "@/lib/parseChat";
 import { slugify } from "@/lib/slug";
 import { getServiceClient } from "@/lib/supabase/service";
-import { createPublicClient } from "@/lib/supabase/public";
 import { NextRequest, NextResponse } from "next/server";
+import type { ImagePayload } from "../route";
 
-export type ImagePayload = {
-  url: string;
-  sender: string;
-  time_label: string;
-  caption?: string;
-};
+type Ctx = { params: Promise<{ id: string }> };
 
-export async function GET(req: NextRequest) {
-  const supabase = createPublicClient();
-  if (!supabase) {
-    return NextResponse.json({ posts: [] });
-  }
-  const includeMessages =
-    req.nextUrl.searchParams.get("includeMessages") === "1";
-  const { data: posts, error } = await supabase
-    .from("posts")
-    .select("id,title,slug,blurb,created_at")
-    .order("created_at", { ascending: false });
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-  if (!includeMessages || !posts?.length) {
-    return NextResponse.json({ posts: posts ?? [] });
-  }
-  const postIds = posts.map((post) => post.id as string);
-  const { data: messages, error: messagesError } = await supabase
-    .from("messages")
-    .select(
-      "id,post_id,order_index,kind,sender,time_label,body,image_url,image_caption",
-    )
-    .in("post_id", postIds)
-    .order("post_id", { ascending: true })
-    .order("order_index", { ascending: true });
-  if (messagesError) {
-    return NextResponse.json(
-      { error: messagesError.message },
-      { status: 500 },
-    );
-  }
-  return NextResponse.json({ posts: posts ?? [], messages: messages ?? [] });
-}
-
-export async function POST(req: NextRequest) {
+export async function PATCH(req: NextRequest, ctx: Ctx) {
   if (!verifyAdminRequest(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -58,6 +18,7 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
+
   let body: {
     title?: string;
     slug?: string;
@@ -70,10 +31,13 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
+
+  const { id } = await ctx.params;
   const title = (body.title ?? "").trim();
   if (!title) {
     return NextResponse.json({ error: "Title required" }, { status: 400 });
   }
+
   const slug = slugify((body.slug ?? "").trim() || title);
   const blurb = body.blurb?.trim() || null;
   const chatText = body.chatText ?? "";
@@ -84,19 +48,8 @@ export async function POST(req: NextRequest) {
     const msg = e instanceof Error ? e.message : "Invalid chat text";
     return NextResponse.json({ error: msg }, { status: 400 });
   }
+
   const images = Array.isArray(body.images) ? body.images : [];
-
-  const { data: post, error: postErr } = await supabase
-    .from("posts")
-    .insert({ title, slug, blurb })
-    .select("id")
-    .single();
-  if (postErr) {
-    const status = postErr.code === "23505" ? 409 : 500;
-    return NextResponse.json({ error: postErr.message }, { status });
-  }
-  const postId = post.id as string;
-
   const rows: {
     post_id: string;
     order_index: number;
@@ -110,7 +63,7 @@ export async function POST(req: NextRequest) {
 
   textMessages.forEach((m, i) => {
     rows.push({
-      post_id: postId,
+      post_id: id,
       order_index: i,
       kind: "text",
       sender: m.sender,
@@ -124,11 +77,11 @@ export async function POST(req: NextRequest) {
   images.forEach((im, j) => {
     if (!im.url?.trim()) return;
     rows.push({
-      post_id: postId,
+      post_id: id,
       order_index: start + j,
       kind: "image",
       sender: im.sender.trim() || "me",
-      time_label: im.time_label.trim() || "—",
+      time_label: im.time_label.trim() || "-",
       body: null,
       image_url: im.url.trim(),
       image_caption: im.caption?.trim() || null,
@@ -136,18 +89,62 @@ export async function POST(req: NextRequest) {
   });
 
   if (rows.length === 0) {
-    await supabase.from("posts").delete().eq("id", postId);
     return NextResponse.json(
       { error: "Add chat lines and/or at least one image" },
       { status: 400 },
     );
   }
 
-  const { error: msgErr } = await supabase.from("messages").insert(rows);
+  const { data: post, error: postErr } = await supabase
+    .from("posts")
+    .update({ title, slug, blurb })
+    .eq("id", id)
+    .select("id,title,slug,blurb,created_at")
+    .single();
+  if (postErr) {
+    const status = postErr.code === "23505" ? 409 : 500;
+    return NextResponse.json({ error: postErr.message }, { status });
+  }
+  if (!post) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const { error: deleteErr } = await supabase
+    .from("messages")
+    .delete()
+    .eq("post_id", id);
+  if (deleteErr) {
+    return NextResponse.json({ error: deleteErr.message }, { status: 500 });
+  }
+  const { data: messages, error: msgErr } = await supabase
+    .from("messages")
+    .insert(rows)
+    .select(
+      "id,post_id,order_index,kind,sender,time_label,body,image_url,image_caption",
+    )
+    .order("order_index", { ascending: true });
   if (msgErr) {
-    await supabase.from("posts").delete().eq("id", postId);
     return NextResponse.json({ error: msgErr.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, slug });
+  return NextResponse.json({ ok: true, post, messages: messages ?? [] });
+}
+
+export async function DELETE(req: NextRequest, ctx: Ctx) {
+  if (!verifyAdminRequest(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const supabase = getServiceClient();
+  if (!supabase) {
+    return NextResponse.json(
+      { error: "Supabase service not configured" },
+      { status: 500 },
+    );
+  }
+  const { id } = await ctx.params;
+  const { error } = await supabase.from("posts").delete().eq("id", id);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true });
 }

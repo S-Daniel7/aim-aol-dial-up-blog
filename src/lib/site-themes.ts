@@ -1,6 +1,6 @@
 /** Theme ids map to `[data-theme="…"]` blocks in `globals.css`. Add new ids there and here. */
 export const SITE_THEMES = [
-  { id: "classic", label: "Classic (MySpace-ish)" },
+  { id: "classic", label: "Classic" },
   { id: "aim-console", label: "AIM console" },
   { id: "high-contrast", label: "High contrast" },
 ] as const;

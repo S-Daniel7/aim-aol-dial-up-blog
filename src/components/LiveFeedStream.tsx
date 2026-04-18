@@ -45,7 +45,7 @@ export function LiveFeedStream({
               <h1 className="mb-8 font-sans text-sm font-bold uppercase tracking-wide text-text">
                 {g.heading.toUpperCase()}
               </h1>
-              <div className="space-y-2">
+              <div className="space-y-0.7">
                 {g.items.map((entry) => (
                   <article
                     key={entry.id}

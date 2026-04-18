@@ -107,3 +107,21 @@ a {
 a:hover {
   color: var(--link-hover);
 }
+
+.board-shell {
+  overflow: hidden;
+}
+
+.board-surface {
+  aspect-ratio: 1000 / 700;
+  margin-inline: auto;
+  width: min(100%, calc((100dvh - 11rem) * 1000 / 700));
+  max-height: calc(100dvh - 11rem);
+}
+
+@media (max-width: 768px) {
+  .board-surface {
+    width: 100%;
+    max-height: none;
+  }
+}

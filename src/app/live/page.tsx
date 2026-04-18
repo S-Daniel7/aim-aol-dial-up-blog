@@ -1,7 +1,9 @@
+import { LiveFeedCalendar } from "@/components/LiveFeedCalendar";
 import { LiveFeedStream } from "@/components/LiveFeedStream";
 import { getSupabasePublicConfig } from "@/lib/env";
 import { getLiveFeedAuthor } from "@/lib/live-feed-author";
 import { fetchLiveFeedEntries } from "@/lib/live-feed-db";
+import { formatEstDateKey } from "@/lib/live-feed-time";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -11,9 +13,28 @@ export const metadata: Metadata = {
   description: "Status stream",
 };
 
-export default async function LivePage() {
+type Props = {
+  searchParams: Promise<{ date?: string; month?: string }>;
+};
+
+function cleanDateParam(value: string | undefined) {
+  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+}
+
+export default async function LivePage({ searchParams }: Props) {
   const configured = !!getSupabasePublicConfig();
-  const entries = configured ? await fetchLiveFeedEntries() : [];
+  const params = await searchParams;
+  const selectedDate = cleanDateParam(params.date);
+  const displayMonth = selectedDate ?? cleanDateParam(params.month);
+  const allEntries = configured ? await fetchLiveFeedEntries() : [];
+  const availableDates = Array.from(
+    new Set(allEntries.map((entry) => formatEstDateKey(entry.created_at))),
+  ).sort();
+  const entries = selectedDate
+    ? allEntries.filter(
+        (entry) => formatEstDateKey(entry.created_at) === selectedDate,
+      )
+    : allEntries;
   const author = getLiveFeedAuthor();
 
   return (
@@ -27,7 +48,14 @@ export default async function LivePage() {
           </p>
         </div>
       ) : null}
-      <LiveFeedStream entries={entries} author={author} />
+      <div className="grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start">
+        <LiveFeedCalendar
+          availableDates={availableDates}
+          displayMonth={displayMonth}
+          selectedDate={selectedDate}
+        />
+        <LiveFeedStream entries={entries} author={author} />
+      </div>
     </div>
   );
 }

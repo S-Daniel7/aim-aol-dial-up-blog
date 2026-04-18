@@ -22,6 +22,14 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
             >
               live
             </Link>
+            <span className="text-muted">·</span>
+            <Link
+              href="/board"
+              className="font-heading text-xl tracking-wide text-text no-underline hover:text-accent"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              board
+            </Link>
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <ThemeSwitcher />
@@ -34,7 +42,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>
     </div>
   );
 }

@@ -25,3 +25,24 @@ export type LiveFeedEntry = {
   image_url: string | null;
   created_at: string;
 };
+
+export type BoardItem = {
+  id: string;
+  kind: "image" | "text";
+  image_url: string | null;
+  text: string | null;
+  x: number;
+  y: number;
+  width: number;
+  height: number | null;
+  rotation: number;
+  z_index: number;
+  font_family: string | null;
+  font_size: number | null;
+  color: string | null;
+  is_bold: boolean | null;
+  is_italic: boolean | null;
+  is_underline: boolean | null;
+  created_at: string;
+  updated_at: string;
+};
