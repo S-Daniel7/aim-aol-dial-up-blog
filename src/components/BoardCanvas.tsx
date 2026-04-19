@@ -83,7 +83,6 @@ export function BoardCanvas({ items }: Props) {
                   fontWeight: item.is_bold ? 700 : 400,
                   textDecoration: item.is_underline ? "underline" : "none",
                   color: item.color ?? "var(--text)",
-                  textShadow: "1px 1px 0 rgba(255,255,255,0.75)",
                 }}
               >
                 {item.text}

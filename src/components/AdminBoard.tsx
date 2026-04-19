@@ -447,7 +447,6 @@ export function AdminBoard() {
             fontWeight: nextDraft.isBold ? 700 : 400,
             textDecoration: nextDraft.isUnderline ? "underline" : "none",
             color: nextDraft.color,
-            textShadow: "1px 1px 0 rgba(255,255,255,0.75)",
           }}
         >
           {nextDraft.text}

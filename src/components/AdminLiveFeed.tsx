@@ -130,6 +130,12 @@ export function AdminLiveFeed() {
       setDraft("");
       setPendingImageUrl(null);
       await load();
+    } catch (err) {
+      setStatus(
+        err instanceof Error
+          ? `Network error posting live feed: ${err.message}`
+          : "Network error posting live feed.",
+      );
     } finally {
       setBusy(false);
     }
@@ -179,6 +185,12 @@ export function AdminLiveFeed() {
       }
       cancelEdit();
       await load();
+    } catch (err) {
+      setStatus(
+        err instanceof Error
+          ? `Network error saving live feed: ${err.message}`
+          : "Network error saving live feed.",
+      );
     } finally {
       setBusy(false);
     }
@@ -207,6 +219,12 @@ export function AdminLiveFeed() {
       }
       if (editingId === id) cancelEdit();
       await load();
+    } catch (err) {
+      setStatus(
+        err instanceof Error
+          ? `Network error deleting live feed: ${err.message}`
+          : "Network error deleting live feed.",
+      );
     } finally {
       setBusy(false);
     }

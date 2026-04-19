@@ -9,14 +9,14 @@ export function AdminSubnav() {
       >
         Chat-room posts
       </Link>
-      <span className="text-muted">·</span>
+      <span className="text-muted">*</span>
       <Link
         href="/admin/live"
         className="text-link no-underline hover:text-link-hover"
       >
         Live feed
       </Link>
-      <span className="text-muted">·</span>
+      <span className="text-muted">*</span>
       <Link
         href="/admin/board"
         className="text-link no-underline hover:text-link-hover"

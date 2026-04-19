@@ -15,10 +15,10 @@ export default async function Home() {
   return (
     <div>
       <h1
-        className="mb-2 font-heading text-3xl uppercase tracking-wide text-text"
+        className="mb-2 font-heading text-3xl tracking-wide text-text"
         style={{ fontFamily: "var(--font-heading)" }}
       >
-        ~* welcome *~
+        ~* hello aol myspace blog thing  *~
       </h1>
       <p className="mb-6 border-l-4 border-accent pl-3 text-sm text-muted">
         Chat-room posts. Each entry is a saved log with timestamps and handles.

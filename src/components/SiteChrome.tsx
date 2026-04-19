@@ -12,23 +12,34 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
               className="font-heading text-xl tracking-wide text-text no-underline hover:text-accent"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              home
+              
+             
+              homepage
             </Link>
-            <span className="text-muted">·</span>
+            <span className="text-muted">-+-</span>
             <Link
               href="/live"
               className="font-heading text-xl tracking-wide text-text no-underline hover:text-accent"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              live
+              livefeed
             </Link>
-            <span className="text-muted">·</span>
+            <span className="text-muted">-+-</span>
             <Link
               href="/board"
               className="font-heading text-xl tracking-wide text-text no-underline hover:text-accent"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              board
+              
+              pinboard
+            </Link>
+            <span className="text-muted">-+-</span>
+            <Link
+              href="/chat"
+              className="font-heading text-xl tracking-wide text-text no-underline hover:text-accent"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              chat
             </Link>
           </div>
           <div className="flex flex-wrap items-center gap-4">

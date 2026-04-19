@@ -38,12 +38,26 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   if (text.length > MAX_LEN) {
     return NextResponse.json({ error: "Message too long" }, { status: 400 });
   }
-  const { data, error } = await supabase
-    .from("live_feed_entries")
-    .update({ body: text, image_url: imageUrl })
-    .eq("id", id)
-    .select("id,feed_number,body,image_url,created_at")
-    .single();
+  let result;
+  try {
+    result = await supabase
+      .from("live_feed_entries")
+      .update({ body: text, image_url: imageUrl })
+      .eq("id", id)
+      .select("id,feed_number,body,image_url,created_at")
+      .single();
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error:
+          err instanceof Error
+            ? `Could not reach Supabase: ${err.message}`
+            : "Could not reach Supabase.",
+      },
+      { status: 500 },
+    );
+  }
+  const { data, error } = result;
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -65,7 +79,24 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
     );
   }
   const { id } = await ctx.params;
-  const { error } = await supabase.from("live_feed_entries").delete().eq("id", id);
+  let result;
+  try {
+    result = await supabase
+      .from("live_feed_entries")
+      .delete()
+      .eq("id", id);
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error:
+          err instanceof Error
+            ? `Could not reach Supabase: ${err.message}`
+            : "Could not reach Supabase.",
+      },
+      { status: 500 },
+    );
+  }
+  const { error } = result;
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

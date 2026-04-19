@@ -15,10 +15,25 @@ export async function GET() {
       { status: 200 },
     );
   }
-  const { data, error } = await supabase
-    .from("live_feed_entries")
-    .select("id,feed_number,body,image_url,created_at")
-    .order("feed_number", { ascending: false });
+  let result;
+  try {
+    result = await supabase
+      .from("live_feed_entries")
+      .select("id,feed_number,body,image_url,created_at")
+      .order("feed_number", { ascending: false });
+  } catch (err) {
+    return NextResponse.json(
+      {
+        entries: [],
+        error:
+          err instanceof Error
+            ? `Could not reach Supabase: ${err.message}`
+            : "Could not reach Supabase.",
+      },
+      { status: 500 },
+    );
+  }
+  const { data, error } = result;
   if (error) {
     const hint =
       error.message.includes("relation") ||
@@ -64,11 +79,25 @@ export async function POST(req: NextRequest) {
   if (text.length > MAX_LEN) {
     return NextResponse.json({ error: "Message too long" }, { status: 400 });
   }
-  const { data, error } = await supabase
-    .from("live_feed_entries")
-    .insert({ body: text, image_url: imageUrl })
-    .select("id,feed_number,body,image_url,created_at")
-    .single();
+  let result;
+  try {
+    result = await supabase
+      .from("live_feed_entries")
+      .insert({ body: text, image_url: imageUrl })
+      .select("id,feed_number,body,image_url,created_at")
+      .single();
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error:
+          err instanceof Error
+            ? `Could not reach Supabase: ${err.message}`
+            : "Could not reach Supabase.",
+      },
+      { status: 500 },
+    );
+  }
+  const { data, error } = result;
   if (error) {
     const hint =
       error.message.includes("constraint") || error.message.includes("check")
