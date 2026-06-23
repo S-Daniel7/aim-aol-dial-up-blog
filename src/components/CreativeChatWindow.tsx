@@ -11,7 +11,7 @@ import type { Flow, Message, Settings, Styles } from "react-chatbotify";
 const ChatBot = dynamic(() => import("react-chatbotify"), {
   ssr: false,
   loading: () => (
-    <div className="flex min-h-[520px] items-center justify-center bg-chat-bg font-mono text-sm text-muted">
+    <div className="flex min-h-[360px] items-center justify-center bg-chat-bg font-mono text-sm text-muted sm:min-h-[520px]">
       CreativeBuddy is signing on...
     </div>
   ),
@@ -75,7 +75,7 @@ const settings: Settings = {
 const styles: Styles = {
   chatWindowStyle: {
     width: "100%",
-    height: "560px",
+    height: "clamp(360px, 60dvh, 560px)",
     borderRadius: 0,
     boxShadow: "none",
     border: "none",
@@ -258,7 +258,7 @@ export function CreativeChatWindow() {
         cool fun stuff to make
       </div>
 
-      <div className="grid min-h-[560px] bg-chat-bg md:grid-cols-[12rem_minmax(0,1fr)]">
+      <div className="grid min-h-[360px] bg-chat-bg sm:min-h-[520px] md:grid-cols-[12rem_minmax(0,1fr)]">
         <aside className="border-b-2 border-border bg-surface-2 p-3 text-sm md:border-b-0 md:border-r-2">
           <p className="mb-2 font-semibold text-accent">buddy list</p>
           <ul className="space-y-1 font-mono text-xs">
