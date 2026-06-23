@@ -22,7 +22,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
 
       <header className="border-b-2 border-border bg-surface">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 overflow-x-auto sm:flex-wrap sm:gap-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <Link
               href="/"
               className="font-heading text-xl tracking-wide text-text no-underline hover:text-accent"
@@ -69,7 +69,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-4 sm:py-8">
         {children}
       </main>
 
