@@ -1,4 +1,4 @@
-import { verifyAdminRequest } from "@/lib/admin-session";
+import { EDITOR_ROLES, getWorkspaceAccess } from "@/lib/admin-session";
 import {
   boardPayloadToRow,
   type BoardPayload,
@@ -28,7 +28,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!verifyAdminRequest(req)) {
+  const access = await getWorkspaceAccess(req, EDITOR_ROLES);
+  if (!access) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabase = getServiceClient();
@@ -52,7 +53,12 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("board_items")
-    .insert(result.row)
+    .insert({
+      ...result.row,
+      author_id: access.user.id,
+      workspace_id: access.workspaceId,
+      visibility: "public",
+    })
     .select(
       "id,kind,image_url,text,x,y,width,height,rotation,z_index,font_family,font_size,color,is_bold,is_italic,is_underline,created_at,updated_at",
     )

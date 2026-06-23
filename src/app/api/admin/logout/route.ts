@@ -1,9 +1,9 @@
-import { ADMIN_COOKIE } from "@/lib/admin-session";
-import { cookies } from "next/headers";
+import { AUTH_ACCESS_COOKIE, AUTH_REFRESH_COOKIE } from "@/lib/admin-session";
 import { NextResponse } from "next/server";
 
 export async function POST() {
-  const jar = await cookies();
-  jar.delete(ADMIN_COOKIE);
-  return NextResponse.json({ ok: true });
+  const response = NextResponse.json({ ok: true });
+  response.cookies.delete(AUTH_ACCESS_COOKIE);
+  response.cookies.delete(AUTH_REFRESH_COOKIE);
+  return response;
 }

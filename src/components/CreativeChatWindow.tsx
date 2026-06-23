@@ -1,100 +1,239 @@
 "use client";
 
-import { FormEvent, useMemo, useRef, useState } from "react";
+import LlmConnector, {
+  type LlmConnectorBlock,
+  type Provider,
+} from "@rcb-plugins/llm-connector";
+import dynamic from "next/dynamic";
+import { useMemo } from "react";
+import type { Flow, Message, Settings, Styles } from "react-chatbotify";
 
-type ChatMessage = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
+const ChatBot = dynamic(() => import("react-chatbotify"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex min-h-[520px] items-center justify-center bg-chat-bg font-mono text-sm text-muted">
+      CreativeBuddy is signing on...
+    </div>
+  ),
+});
+
+const CREATIVE_BUDDY_SYSTEM_PROMPT = [
+  "You are CreativeBuddy, a warm, practical creative companion inside a retro AOL-style website.",
+  "Help with film, writing, collage, visual references, music, project planning, routines, creative research, and getting unstuck.",
+  "Also help with the site's publishing workflow: turn notes or chat logs into post drafts, write image captions, suggest semantic tags, summarize boards or posts, and propose safer publication wording when needed.",
+  "Keep replies short: usually 2 to 4 lines, no more than 80 words unless the user asks for detail.",
+  "Give concrete next steps and ask at most one useful question.",
+  "When suggesting references, suggest movements, genres, films, books, techniques, or eras to investigate; do not tell users to copy a living artist's style.",
+].join(" ");
+
+const settings: Settings = {
+  general: {
+    embedded: true,
+    showHeader: false,
+    showFooter: false,
+    primaryColor: "#cc0000",
+    secondaryColor: "#0000cc",
+    fontFamily: "var(--font-body)",
+  },
+  chatHistory: {
+    disabled: true,
+  },
+  chatInput: {
+    allowNewline: true,
+    botDelay: 600,
+    characterLimit: 1200,
+    enabledPlaceholderText: "ask about a creative project...",
+    showCharacterCount: true,
+  },
+  chatWindow: {
+    showScrollbar: true,
+    showTypingIndicator: true,
+  },
+  botBubble: {
+    animate: false,
+  },
+  userBubble: {
+    animate: false,
+  },
+  notification: {
+    disabled: true,
+  },
+  audio: {
+    disabled: true,
+  },
+  voice: {
+    disabled: true,
+  },
+  fileAttachment: {
+    disabled: true,
+  },
+  emoji: {
+    disabled: true,
+  },
 };
 
-const INITIAL_MESSAGES: ChatMessage[] = [
-  {
-    id: "welcome",
-    role: "assistant",
-    content:
-      "hi, i'm your little studio chat window. ask me about getting unstuck, finding references, or planning a project.",
+const styles: Styles = {
+  chatWindowStyle: {
+    width: "100%",
+    height: "560px",
+    borderRadius: 0,
+    boxShadow: "none",
+    border: "none",
+    background: "var(--chat-bg)",
   },
-];
+  bodyStyle: {
+    background: "var(--chat-bg)",
+    padding: "12px",
+    borderLeft: "2px inset var(--surface-2)",
+    borderTop: "2px inset var(--surface-2)",
+  },
+  chatInputContainerStyle: {
+    borderTop: "2px solid var(--border)",
+    borderRadius: 0,
+    background: "var(--surface)",
+  },
+  chatInputAreaStyle: {
+    minHeight: "72px",
+    border: "2px solid var(--border)",
+    borderRadius: 0,
+    background: "var(--page-bg)",
+    color: "var(--text)",
+    fontFamily: "var(--font-mono-chat)",
+  },
+  chatInputAreaFocusedStyle: {
+    background: "var(--surface-2)",
+    boxShadow: "none",
+  },
+  botBubbleStyle: {
+    borderRadius: 0,
+    background: "transparent",
+    border: "none",
+    color: "var(--text)",
+    fontFamily: "var(--font-mono-chat)",
+    fontSize: "14px",
+    lineHeight: 1.45,
+    maxWidth: "100%",
+    padding: "2px 0",
+    textAlign: "left",
+  },
+  userBubbleStyle: {
+    borderRadius: 0,
+    background: "transparent",
+    border: "none",
+    color: "var(--text)",
+    fontFamily: "var(--font-mono-chat)",
+    fontSize: "14px",
+    lineHeight: 1.45,
+    maxWidth: "100%",
+    padding: "2px 0",
+    textAlign: "left",
+  },
+  botOptionStyle: {
+    borderRadius: 0,
+    border: "1px solid var(--border)",
+    background: "var(--page-bg)",
+    color: "var(--link)",
+    fontFamily: "var(--font-mono-chat)",
+  },
+  botOptionHoveredStyle: {
+    borderRadius: 0,
+    border: "1px solid var(--border)",
+    background: "var(--page-bg)",
+    color: "var(--link)",
+    fontFamily: "var(--font-mono-chat)",
+  },
+  sendButtonStyle: {
+    borderRadius: 0,
+    background: "var(--accent)",
+  },
+  sendButtonHoveredStyle: {
+    background: "var(--accent-hover)",
+  },
+  sendButtonDisabledStyle: {
+    borderRadius: 0,
+    background: "var(--muted)",
+  },
+  characterLimitStyle: {
+    color: "var(--muted)",
+    fontFamily: "var(--font-mono-chat)",
+  },
+  chatHistoryLineBreakStyle: {
+    color: "var(--muted)",
+    fontFamily: "var(--font-mono-chat)",
+  },
+  rcbTypingIndicatorContainerStyle: {
+    paddingLeft: "0",
+  },
+  rcbTypingIndicatorDotStyle: {
+    backgroundColor: "var(--muted)",
+  },
+};
 
-const PROMPTS = [
-  "help me plan a short film from a mood",
-  "give me art references for a collage project",
-  "how do i start writing again after a long break?",
-];
+class OpenRouterProvider implements Provider {
+  async *sendMessages(messages: Message[]): AsyncGenerator<string> {
+    const response = await fetch("/api/openrouter-chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        systemMessage: CREATIVE_BUDDY_SYSTEM_PROMPT,
+        messages: messages.map((message) => ({
+          sender: message.sender,
+          content:
+            typeof message.content === "string" ? message.content : "",
+        })),
+      }),
+    });
 
-function makeId() {
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    if (!response.ok || !response.body) {
+      const data = (await response.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      yield data?.error ?? "stevenspielbot could not reach OpenRouter.";
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      if (chunk) yield chunk;
+    }
+
+    const tail = decoder.decode();
+    if (tail) yield tail;
+  }
+}
+
+function createFlow(provider: Provider): Flow {
+  const llmBlock: LlmConnectorBlock = {
+    llmConnector: {
+      provider,
+      outputType: "chunk",
+      outputSpeed: 20,
+      historySize: 4,
+      errorMessage:
+        "stevenspielbot could not reach OpenRouter. try again in a minute.",
+    },
+  };
+
+  return {
+    start: {
+      transition: 0,
+      path: "creative_reply",
+    },
+    creative_reply: llmBlock,
+  };
 }
 
 export function CreativeChatWindow() {
-  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
-  const [draft, setDraft] = useState("");
-  const [status, setStatus] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const inputRef = useRef<HTMLTextAreaElement | null>(null);
-
-  const transcript = useMemo(
-    () =>
-      messages
-        .filter((message) => message.content.trim())
-        .map(({ role, content }) => ({ role, content })),
-    [messages],
-  );
-
-  async function sendMessage(text: string) {
-    const trimmed = text.trim();
-    if (!trimmed || busy) return;
-
-    const userMessage: ChatMessage = {
-      id: makeId(),
-      role: "user",
-      content: trimmed,
-    };
-
-    setMessages((current) => [...current, userMessage]);
-    setDraft("");
-    setStatus(null);
-    setBusy(true);
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [...transcript, { role: "user", content: trimmed }],
-        }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        reply?: string;
-        error?: string;
-      };
-
-      if (!res.ok || !data.reply) {
-        setStatus(data.error ?? "The chat window could not connect.");
-        return;
-      }
-
-      setMessages((current) => [
-        ...current,
-        {
-          id: makeId(),
-          role: "assistant",
-          content: data.reply ?? "",
-        },
-      ]);
-    } catch (err) {
-      setStatus(err instanceof Error ? err.message : "Network error.");
-    } finally {
-      setBusy(false);
-      requestAnimationFrame(() => inputRef.current?.focus());
-    }
-  }
-
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    void sendMessage(draft);
-  }
+  const flow = useMemo(() => createFlow(new OpenRouterProvider()), []);
+  const plugins = useMemo(() => [LlmConnector()], []);
 
   return (
     <section
@@ -106,12 +245,12 @@ export function CreativeChatWindow() {
           className="min-w-0 truncate font-heading text-xl tracking-wide"
           style={{ fontFamily: "var(--font-heading)" }}
         >
-          Creative Buddy - Instant Message
+          Instant Message
         </h1>
         <div className="flex gap-1 pl-3 text-xs opacity-90" aria-hidden>
           <span className="border border-title-bar-text px-1">_</span>
-          <span className="border border-title-bar-text px-1">□</span>
-          <span className="border border-title-bar-text px-1">×</span>
+          <span className="border border-title-bar-text px-1">[]</span>
+          <span className="border border-title-bar-text px-1">X</span>
         </div>
       </div>
 
@@ -125,98 +264,21 @@ export function CreativeChatWindow() {
           <ul className="space-y-1 font-mono text-xs">
             <li className="flex items-center gap-2">
               <span className="h-2 w-2 bg-accent" aria-hidden />
-              stevenspielbot
+              steven_spielbot
             </li>
-            <li className="text-muted">muse_finder</li>
-            <li className="text-muted">plot_spark</li>
-            <li className="text-muted">studio_planner</li>
+            <li className="text-muted">greta_gerwini</li>
+            <li className="text-muted">paul_thomas_anthropic</li>
+            <li className="text-muted">ryan_googler</li>
           </ul>
-
-          <div className="mt-5 space-y-2">
-            {PROMPTS.map((prompt) => (
-              <button
-                key={prompt}
-                type="button"
-                onClick={() => {
-                  setDraft(prompt);
-                  inputRef.current?.focus();
-                }}
-                className="block w-full border border-border bg-page-bg px-2 py-1 text-left text-xs text-link hover:bg-surface"
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
         </aside>
 
-        <div className="flex min-h-0 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto p-3 font-mono text-sm">
-            <ul className="space-y-4">
-              {messages.map((message) => (
-                <li key={message.id} className="leading-relaxed">
-                  <span
-                    className={
-                      message.role === "user"
-                        ? "font-semibold text-link"
-                        : "font-semibold text-accent"
-                    }
-                  >
-                    {message.role === "user" ? "you" : "stevenspielbot"}
-                  </span>
-                  <span className="text-muted">:</span>{" "}
-                  <span className="whitespace-pre-wrap text-text">
-                    {message.content}
-                  </span>
-                </li>
-              ))}
-              {busy ? (
-                <li className="font-mono text-sm text-muted">
-                  CreativeBuddy is typing...
-                </li>
-              ) : null}
-            </ul>
-          </div>
-
-          {status ? (
-            <p className="border-t-2 border-border bg-surface-2 px-3 py-2 text-sm text-accent">
-              {status}
-            </p>
-          ) : null}
-
-          <form
-            onSubmit={onSubmit}
-            className="border-t-2 border-border bg-surface p-3"
-          >
-            <label className="mb-2 block text-xs font-semibold text-muted">
-              message
-            </label>
-            <textarea
-              ref={inputRef}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  e.currentTarget.form?.requestSubmit();
-                }
-              }}
-              rows={3}
-              maxLength={1200}
-              className="w-full resize-y border-2 border-border bg-page-bg px-3 py-2 text-sm text-text outline-none focus:bg-surface-2"
-              placeholder="ask about a creative project..."
-              disabled={busy}
-            />
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs text-muted">{draft.length}/1200</p>
-              <button
-                type="submit"
-                disabled={busy || !draft.trim()}
-                className="border-2 border-border bg-accent px-4 py-2 text-sm text-accent-contrast enabled:hover:bg-accent-hover disabled:opacity-50"
-              >
-                send
-              </button>
-            </div>
-          </form>
+        <div className="creative-chatbotify min-w-0">
+          <ChatBot
+            flow={flow}
+            plugins={plugins}
+            settings={settings}
+            styles={styles}
+          />
         </div>
       </div>
     </section>

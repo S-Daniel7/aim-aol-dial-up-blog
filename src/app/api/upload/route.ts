@@ -1,9 +1,10 @@
-import { verifyAdminRequest } from "@/lib/admin-session";
+import { EDITOR_ROLES, getWorkspaceAccess } from "@/lib/admin-session";
 import { getServiceClient } from "@/lib/supabase/service";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  if (!verifyAdminRequest(req)) {
+  const access = await getWorkspaceAccess(req, EDITOR_ROLES);
+  if (!access) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabase = getServiceClient();
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing file" }, { status: 400 });
   }
   const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const path = `uploads/${Date.now()}-${safe}`;
+  const path = `uploads/${access.workspaceId}/${access.user.id}/${Date.now()}-${safe}`;
   const buf = Buffer.from(await file.arrayBuffer());
   const { error: upErr } = await supabase.storage
     .from("blog-images")

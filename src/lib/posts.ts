@@ -35,6 +35,21 @@ export async function fetchPostBySlug(
   };
 }
 
+export async function fetchPostCountsByDate(): Promise<Record<string, number>> {
+  const supabase = createPublicClient();
+  if (!supabase) return {};
+  const { data } = await supabase
+    .from("posts")
+    .select("created_at")
+    .order("created_at", { ascending: true });
+  const counts: Record<string, number> = {};
+  for (const row of (data ?? []) as { created_at: string }[]) {
+    const date = row.created_at.slice(0, 10);
+    counts[date] = (counts[date] ?? 0) + 1;
+  }
+  return counts;
+}
+
 export async function fetchMessagesForPosts(
   postIds: string[],
 ): Promise<Record<string, DbMessage[]>> {

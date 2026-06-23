@@ -1,4 +1,4 @@
-import { verifyAdminRequest } from "@/lib/admin-session";
+import { EDITOR_ROLES, getWorkspaceAccess } from "@/lib/admin-session";
 import { boardPayloadToRow, type BoardPayload } from "@/lib/board-payload";
 import { getServiceClient } from "@/lib/supabase/service";
 import { NextRequest, NextResponse } from "next/server";
@@ -6,7 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function PATCH(req: NextRequest, ctx: Ctx) {
-  if (!verifyAdminRequest(req)) {
+  const access = await getWorkspaceAccess(req, EDITOR_ROLES);
+  if (!access) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabase = getServiceClient();
@@ -33,6 +34,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     .from("board_items")
     .update(result.row)
     .eq("id", id)
+    .eq("workspace_id", access.workspaceId)
     .select(
       "id,kind,image_url,text,x,y,width,height,rotation,z_index,font_family,font_size,color,is_bold,is_italic,is_underline,created_at,updated_at",
     )
@@ -47,7 +49,8 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 }
 
 export async function DELETE(req: NextRequest, ctx: Ctx) {
-  if (!verifyAdminRequest(req)) {
+  const access = await getWorkspaceAccess(req, EDITOR_ROLES);
+  if (!access) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabase = getServiceClient();
@@ -58,7 +61,11 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
     );
   }
   const { id } = await ctx.params;
-  const { error } = await supabase.from("board_items").delete().eq("id", id);
+  const { error } = await supabase
+    .from("board_items")
+    .delete()
+    .eq("id", id)
+    .eq("workspace_id", access.workspaceId);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

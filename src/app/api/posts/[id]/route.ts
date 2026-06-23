@@ -1,4 +1,4 @@
-import { verifyAdminRequest } from "@/lib/admin-session";
+import { EDITOR_ROLES, getWorkspaceAccess } from "@/lib/admin-session";
 import { parseChatLines } from "@/lib/parseChat";
 import { slugify } from "@/lib/slug";
 import { getServiceClient } from "@/lib/supabase/service";
@@ -8,7 +8,8 @@ import type { ImagePayload } from "../route";
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function PATCH(req: NextRequest, ctx: Ctx) {
-  if (!verifyAdminRequest(req)) {
+  const access = await getWorkspaceAccess(req, EDITOR_ROLES);
+  if (!access) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabase = getServiceClient();
@@ -52,6 +53,8 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   const images = Array.isArray(body.images) ? body.images : [];
   const rows: {
     post_id: string;
+    workspace_id: string;
+    author_id: string;
     order_index: number;
     kind: "text" | "image";
     sender: string;
@@ -64,6 +67,8 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   textMessages.forEach((m, i) => {
     rows.push({
       post_id: id,
+      workspace_id: access.workspaceId,
+      author_id: access.user.id,
       order_index: i,
       kind: "text",
       sender: m.sender,
@@ -78,6 +83,8 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     if (!im.url?.trim()) return;
     rows.push({
       post_id: id,
+      workspace_id: access.workspaceId,
+      author_id: access.user.id,
       order_index: start + j,
       kind: "image",
       sender: im.sender.trim() || "me",
@@ -99,6 +106,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     .from("posts")
     .update({ title, slug, blurb })
     .eq("id", id)
+    .eq("workspace_id", access.workspaceId)
     .select("id,title,slug,blurb,created_at")
     .single();
   if (postErr) {
@@ -131,7 +139,8 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 }
 
 export async function DELETE(req: NextRequest, ctx: Ctx) {
-  if (!verifyAdminRequest(req)) {
+  const access = await getWorkspaceAccess(req, EDITOR_ROLES);
+  if (!access) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabase = getServiceClient();
@@ -142,7 +151,11 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
     );
   }
   const { id } = await ctx.params;
-  const { error } = await supabase.from("posts").delete().eq("id", id);
+  const { error } = await supabase
+    .from("posts")
+    .delete()
+    .eq("id", id)
+    .eq("workspace_id", access.workspaceId);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
