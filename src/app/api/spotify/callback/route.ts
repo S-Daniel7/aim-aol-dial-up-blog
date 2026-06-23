@@ -2,23 +2,28 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code");
-  const error = req.nextUrl.searchParams.get("error");
+  const errorParam = req.nextUrl.searchParams.get("error");
+  const stateParam = req.nextUrl.searchParams.get("state");
+  const expectedState = req.cookies.get("spotify_oauth_state")?.value;
 
-  if (error || !code) {
-    return new NextResponse(
-      html("Spotify auth denied", `<p class="error">Spotify returned: ${error ?? "no code"}</p>`),
-      { headers: { "Content-Type": "text/html" } },
-    );
+  // Verify CSRF state token before doing anything
+  if (!expectedState || !stateParam || expectedState !== stateParam) {
+    return htmlResponse("Invalid request", `<p class="error">Missing or mismatched state. Please restart the Spotify setup from the admin panel.</p>`);
+  }
+
+  if (errorParam || !code) {
+    const res = htmlResponse("Spotify auth denied", `<p class="error">Spotify returned: ${esc(errorParam ?? "no code")}</p>`);
+    res.cookies.delete("spotify_oauth_state");
+    return res;
   }
 
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    return new NextResponse(
-      html("Config error", `<p class="error">SPOTIFY_CLIENT_ID or SPOTIFY_CLIENT_SECRET not set.</p>`),
-      { headers: { "Content-Type": "text/html" } },
-    );
+    const res = htmlResponse("Config error", `<p class="error">SPOTIFY_CLIENT_ID or SPOTIFY_CLIENT_SECRET not set.</p>`);
+    res.cookies.delete("spotify_oauth_state");
+    return res;
   }
 
   const siteUrl =
@@ -42,11 +47,9 @@ export async function GET(req: NextRequest) {
   });
 
   if (!tokenRes.ok) {
-    const text = await tokenRes.text();
-    return new NextResponse(
-      html("Token exchange failed", `<p class="error">Spotify said: ${text}</p>`),
-      { headers: { "Content-Type": "text/html" } },
-    );
+    const res = htmlResponse("Token exchange failed", `<p class="error">Spotify token exchange failed. Please try again.</p>`);
+    res.cookies.delete("spotify_oauth_state");
+    return res;
   }
 
   const tokens = (await tokenRes.json()) as {
@@ -54,23 +57,31 @@ export async function GET(req: NextRequest) {
     refresh_token: string;
   };
 
-  return new NextResponse(
-    html(
-      "Spotify connected!",
-      `<p>Copy this refresh token into your <code>.env.local</code> file, then restart the dev server.</p>
-       <div class="token-box">SPOTIFY_REFRESH_TOKEN=${tokens.refresh_token}</div>
-       <p>You can close this tab after copying.</p>`,
-    ),
-    { headers: { "Content-Type": "text/html" } },
+  const res = htmlResponse(
+    "Spotify connected!",
+    `<p>Copy this refresh token into your <code>.env.local</code> file, then restart the dev server.</p>
+     <div class="token-box">SPOTIFY_REFRESH_TOKEN=${esc(tokens.refresh_token)}</div>
+     <p>You can close this tab after copying.</p>`,
   );
+  res.cookies.delete("spotify_oauth_state");
+  return res;
 }
 
-function html(title: string, body: string): string {
-  return `<!doctype html>
+function esc(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function htmlResponse(title: string, body: string): NextResponse {
+  return new NextResponse(
+    `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>${title}</title>
+  <title>${esc(title)}</title>
   <style>
     body { font-family: "Courier New", monospace; background: #1a1a1a; color: #f5f5f5;
            max-width: 600px; margin: 60px auto; padding: 0 24px; }
@@ -83,8 +94,10 @@ function html(title: string, body: string): string {
   </style>
 </head>
 <body>
-  <h1>${title}</h1>
+  <h1>${esc(title)}</h1>
   ${body}
 </body>
-</html>`;
+</html>`,
+    { headers: { "Content-Type": "text/html" } },
+  );
 }
