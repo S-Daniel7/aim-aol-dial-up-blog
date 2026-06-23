@@ -1,4 +1,4 @@
-import { verifyAdminRequest } from "@/lib/admin-session";
+import { EDITOR_ROLES, getWorkspaceAccess } from "@/lib/admin-session";
 import { getServiceClient } from "@/lib/supabase/service";
 import { createPublicClient } from "@/lib/supabase/public";
 import { NextRequest, NextResponse } from "next/server";
@@ -49,7 +49,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!verifyAdminRequest(req)) {
+  const access = await getWorkspaceAccess(req, EDITOR_ROLES);
+  if (!access) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabase = getServiceClient();
@@ -83,7 +84,13 @@ export async function POST(req: NextRequest) {
   try {
     result = await supabase
       .from("live_feed_entries")
-      .insert({ body: text, image_url: imageUrl })
+      .insert({
+        body: text,
+        image_url: imageUrl,
+        author_id: access.user.id,
+        workspace_id: access.workspaceId,
+        visibility: "public",
+      })
       .select("id,feed_number,body,image_url,created_at")
       .single();
   } catch (err) {

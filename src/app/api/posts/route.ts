@@ -1,4 +1,4 @@
-import { verifyAdminRequest } from "@/lib/admin-session";
+import { EDITOR_ROLES, getWorkspaceAccess } from "@/lib/admin-session";
 import { parseChatLines } from "@/lib/parseChat";
 import { slugify } from "@/lib/slug";
 import { getServiceClient } from "@/lib/supabase/service";
@@ -48,7 +48,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!verifyAdminRequest(req)) {
+  const access = await getWorkspaceAccess(req, EDITOR_ROLES);
+  if (!access) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabase = getServiceClient();
@@ -88,7 +89,14 @@ export async function POST(req: NextRequest) {
 
   const { data: post, error: postErr } = await supabase
     .from("posts")
-    .insert({ title, slug, blurb })
+    .insert({
+      title,
+      slug,
+      blurb,
+      author_id: access.user.id,
+      workspace_id: access.workspaceId,
+      visibility: "public",
+    })
     .select("id")
     .single();
   if (postErr) {
@@ -99,6 +107,8 @@ export async function POST(req: NextRequest) {
 
   const rows: {
     post_id: string;
+    workspace_id: string;
+    author_id: string;
     order_index: number;
     kind: "text" | "image";
     sender: string;
@@ -111,6 +121,8 @@ export async function POST(req: NextRequest) {
   textMessages.forEach((m, i) => {
     rows.push({
       post_id: postId,
+      workspace_id: access.workspaceId,
+      author_id: access.user.id,
       order_index: i,
       kind: "text",
       sender: m.sender,
@@ -125,6 +137,8 @@ export async function POST(req: NextRequest) {
     if (!im.url?.trim()) return;
     rows.push({
       post_id: postId,
+      workspace_id: access.workspaceId,
+      author_id: access.user.id,
       order_index: start + j,
       kind: "image",
       sender: im.sender.trim() || "me",
