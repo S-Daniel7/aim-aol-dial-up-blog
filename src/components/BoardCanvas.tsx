@@ -28,6 +28,12 @@ export function BoardCanvas({ items }: Props) {
       </div>
 
       <div className="board-shell border-2 border-border bg-surface p-3">
+        <p
+          className="mb-2 font-mono text-[10px] text-muted sm:hidden"
+          style={{ fontFamily: "var(--font-mono-chat)" }}
+        >
+          tip: best explored on desktop · rotate to landscape for more space
+        </p>
         <div
           className="board-surface relative overflow-hidden"
           style={{
