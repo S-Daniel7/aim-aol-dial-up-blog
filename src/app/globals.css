@@ -108,6 +108,91 @@ a:hover {
   color: var(--link-hover);
 }
 
+.creative-chatbotify .rcb-chatbot-global {
+  z-index: auto;
+}
+
+.creative-chatbotify .rcb-chat-window,
+.creative-chatbotify .rcb-chat-body-container,
+.creative-chatbotify .rcb-chat-input,
+.creative-chatbotify .rcb-chat-input-textarea {
+  font-family: var(--font-mono-chat);
+}
+
+.creative-chatbotify .rcb-user-message-container,
+.creative-chatbotify .rcb-bot-message-container {
+  justify-content: flex-start;
+  margin: 0 0 8px;
+  width: 100%;
+}
+
+.creative-chatbotify .rcb-user-message,
+.creative-chatbotify .rcb-bot-message {
+  margin: 0;
+  max-width: 100% !important;
+  overflow: visible;
+  width: 100%;
+}
+
+.creative-chatbotify .rcb-user-message::before,
+.creative-chatbotify .rcb-bot-message::before {
+  display: inline;
+  font-weight: 700;
+}
+
+.creative-chatbotify .rcb-user-message::before {
+  color: var(--link);
+  content: "you: ";
+}
+
+.creative-chatbotify .rcb-bot-message::before {
+  color: var(--accent);
+  content: "stevenspielbot: ";
+}
+
+.creative-chatbotify .rcb-typing-indicator::before {
+  color: var(--accent);
+  content: "stevenspielbot is typing...";
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+.creative-chatbotify .rcb-typing-indicator .rcb-dot {
+  display: none;
+}
+
+.creative-chatbotify .rcb-options-container {
+  margin-left: 0;
+  max-width: 100%;
+  padding-top: 8px;
+}
+
+.creative-chatbotify .rcb-options,
+.creative-chatbotify .rcb-options:hover {
+  background: var(--page-bg) !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+  color: var(--link) !important;
+}
+
+.creative-chatbotify .rcb-chat-input {
+  padding: 10px;
+}
+
+.creative-chatbotify .rcb-chat-input-textarea {
+  box-shadow: none;
+  font-size: 14px;
+}
+
+.creative-chatbotify .rcb-send-button {
+  border: 2px solid var(--border);
+  box-shadow: none;
+}
+
+.creative-chatbotify .rcb-chat-body-container::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted);
+}
+
 .board-shell {
   overflow: hidden;
 }
