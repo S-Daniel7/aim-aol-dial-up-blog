@@ -26,6 +26,24 @@ export type LiveFeedEntry = {
   created_at: string;
 };
 
+export type GuestbookEntry = {
+  id: string;
+  author_name: string;
+  body: string;
+  created_at: string;
+};
+
+export type AwayMessage = {
+  body: string;
+  updated_at: string;
+};
+
+export type NowPlaying = {
+  track_title: string;
+  artist_name: string;
+  updated_at: string;
+};
+
 export type BoardItem = {
   id: string;
   kind: "image" | "text";
