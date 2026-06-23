@@ -4,36 +4,16 @@ import {
   authCookieOptions,
 } from "@/lib/admin-session";
 import { getAdminEmail } from "@/lib/env";
+import { isRateLimited } from "@/lib/rate-limit";
 import { createPublicClient } from "@/lib/supabase/public";
 import { NextResponse } from "next/server";
-
-// In-memory rate limiter: max 5 attempts per IP per 15 minutes
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const WINDOW_MS = 15 * 60 * 1000;
-  const MAX_ATTEMPTS = 5;
-  const entry = loginAttempts.get(ip);
-  if (!entry || now > entry.resetAt) {
-    loginAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return false;
-  }
-  if (entry.count >= MAX_ATTEMPTS) return true;
-  entry.count++;
-  return false;
-}
-
-function clearAttempts(ip: string) {
-  loginAttempts.delete(ip);
-}
 
 export async function POST(req: Request) {
   const ip =
     (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
     "unknown";
 
-  if (isRateLimited(ip)) {
+  if (await isRateLimited("login", ip, 5, 15 * 60 * 1000)) {
     return NextResponse.json(
       { error: "Too many login attempts. Please wait 15 minutes." },
       { status: 429 },
@@ -57,9 +37,12 @@ export async function POST(req: Request) {
     );
   }
 
-  // Allowlist check — only the configured admin email may log in
+  // Allowlist check — deny if ADMIN_EMAIL not configured (fail closed)
   const adminEmail = getAdminEmail();
-  if (adminEmail && email !== adminEmail.toLowerCase()) {
+  if (!adminEmail) {
+    return NextResponse.json({ error: "Auth not configured" }, { status: 500 });
+  }
+  if (email !== adminEmail.toLowerCase()) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
@@ -79,8 +62,6 @@ export async function POST(req: Request) {
   if (error || !data.session) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
-
-  clearAttempts(ip);
 
   const session = data.session;
   const response = NextResponse.json({ ok: true });

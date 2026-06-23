@@ -1,26 +1,10 @@
 import { sanitize } from "@/lib/content-filter";
+import { isRateLimited } from "@/lib/rate-limit";
 import { createPublicClient } from "@/lib/supabase/public";
 import { getServiceClient } from "@/lib/supabase/service";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
-
-// Rate limiter: max 10 guestbook submissions per IP per hour
-const submissions = new Map<string, { count: number; resetAt: number }>();
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const WINDOW_MS = 60 * 60 * 1000;
-  const MAX = 10;
-  const entry = submissions.get(ip);
-  if (!entry || now > entry.resetAt) {
-    submissions.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return false;
-  }
-  if (entry.count >= MAX) return true;
-  entry.count++;
-  return false;
-}
 
 export async function GET() {
   const supabase = createPublicClient();
@@ -29,7 +13,7 @@ export async function GET() {
     .from("guestbook_entries")
     .select("id,author_name,body,created_at")
     .order("created_at", { ascending: false });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Failed to load entries" }, { status: 500 });
   return NextResponse.json({ entries: data ?? [] });
 }
 
@@ -37,7 +21,7 @@ export async function POST(req: NextRequest) {
   const ip =
     (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
 
-  if (isRateLimited(ip)) {
+  if (await isRateLimited("guestbook", ip, 10, 60 * 60 * 1000)) {
     return NextResponse.json(
       { error: "Too many submissions. Please try again later." },
       { status: 429 },
@@ -79,6 +63,6 @@ export async function POST(req: NextRequest) {
     .select("id,author_name,body,created_at")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Failed to submit entry" }, { status: 500 });
   return NextResponse.json({ entry: data }, { status: 201 });
 }
