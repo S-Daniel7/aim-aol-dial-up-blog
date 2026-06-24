@@ -11,8 +11,24 @@ const vt323 = VT323({
 });
 
 export const metadata: Metadata = {
-  title: "Chat log blog",
-  description: "Retro chat-room posts",
+  title: {
+    template: "%s · soapie",
+    default: "soapie",
+  },
+  description:
+    "a personal corner of the internet — aim chat logs, live thoughts, and things to remember",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  openGraph: {
+    type: "website",
+    siteName: "soapie",
+    title: "soapie",
+    description: "a personal corner of the internet — aim chat logs, live thoughts, and things to remember",
+  },
+  twitter: {
+    card: "summary",
+    title: "soapie",
+    description: "a personal corner of the internet",
+  },
 };
 
 export default function RootLayout({
