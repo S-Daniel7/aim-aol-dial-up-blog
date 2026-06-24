@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { isRateLimited } from "@/lib/rate-limit";
+import { NextRequest, NextResponse } from "next/server";
 
 type ChatPayload = {
   systemMessage?: string;
@@ -31,7 +32,7 @@ type OpenRouterError = {
 };
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "google/gemma-3n-e4b-it:free";
+const DEFAULT_MODEL = "meta-llama/llama-3.1-8b-instruct:free";
 const MAX_MESSAGES = 8;
 const MAX_MESSAGE_LENGTH = 1000;
 
@@ -77,7 +78,12 @@ function formatOpenRouterError(detail: string) {
   return detail ? `OpenRouter request failed: ${detail}` : "OpenRouter request failed.";
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
+  if (await isRateLimited("chat", ip, 30, 60 * 60 * 1000)) {
+    return NextResponse.json({ error: "Too many requests. Please slow down." }, { status: 429 });
+  }
+
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
