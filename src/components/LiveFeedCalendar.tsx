@@ -69,14 +69,16 @@ export function LiveFeedCalendar({
         <div className="flex items-center justify-between gap-2">
           <Link
             href={`/live?month=${dateKey(prev.year, prev.month, 1)}`}
-            className="border border-border bg-surface-2 px-2 py-1 text-xs no-underline hover:bg-page-bg"
+            className="btn-press border border-border bg-surface-2 px-2 py-1 text-xs no-underline transition-colors duration-100 hover:bg-page-bg"
+            style={{ boxShadow: "1px 1px 0 0 var(--border)" }}
           >
             &lt;
           </Link>
           <p className="font-semibold text-text">{monthName(year, month)}</p>
           <Link
             href={`/live?month=${dateKey(next.year, next.month, 1)}`}
-            className="border border-border bg-surface-2 px-2 py-1 text-xs no-underline hover:bg-page-bg"
+            className="btn-press border border-border bg-surface-2 px-2 py-1 text-xs no-underline transition-colors duration-100 hover:bg-page-bg"
+            style={{ boxShadow: "1px 1px 0 0 var(--border)" }}
           >
             &gt;
           </Link>
@@ -101,7 +103,7 @@ export function LiveFeedCalendar({
                 key={key}
                 href={`/live?date=${key}`}
                 className={[
-                  "flex aspect-square items-center justify-center border text-xs no-underline",
+                  "flex aspect-square items-center justify-center border text-xs no-underline transition-colors duration-100",
                   isSelected
                     ? "border-border bg-accent text-accent-contrast"
                     : "border-border bg-page-bg text-link hover:bg-surface-2",
