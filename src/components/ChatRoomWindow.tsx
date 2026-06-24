@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { DbMessage, DbPost } from "@/lib/types";
+import { PostReactions } from "@/components/PostReactions";
 
 type Props = {
   post: DbPost;
@@ -22,7 +23,7 @@ export function ChatRoomWindow({
 
   return (
     <article
-      className="mb-8 border-2 border-border bg-surface"
+      className="card-lift mb-8 border-2 border-border bg-surface"
       style={{ boxShadow: "4px 4px 0 0 var(--border)" }}
     >
       <div className="flex items-center justify-between border-b-2 border-border bg-title-bar px-3 py-2 text-title-bar-text">
@@ -56,8 +57,12 @@ export function ChatRoomWindow({
           <p className="text-muted">(no messages yet)</p>
         ) : (
           <ul className="space-y-3">
-            {messages.map((m) => (
-              <li key={m.id}>
+            {messages.map((m, i) => (
+              <li
+                key={m.id}
+                className="animate-slide-in"
+                style={{ animationDelay: `${i * 0.04}s` }}
+              >
                 {m.kind === "text" ? (
                   <p className="leading-relaxed">
                     <span className="font-semibold text-accent">
@@ -100,6 +105,7 @@ export function ChatRoomWindow({
           </ul>
         )}
       </div>
+      <PostReactions postId={post.id} />
     </article>
   );
 }
