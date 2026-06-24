@@ -31,6 +31,18 @@ export async function PUT(req: NextRequest) {
   if (!supabase) {
     return NextResponse.json({ error: "Service not configured" }, { status: 500 });
   }
+
+  // Archive the current away message before overwriting
+  const { data: current } = await supabase
+    .from("away_message")
+    .select("body")
+    .maybeSingle();
+  if (current?.body && current.body.trim() !== text) {
+    await supabase
+      .from("away_message_history")
+      .insert({ body: current.body.trim(), saved_at: new Date().toISOString() });
+  }
+
   const { error } = await supabase
     .from("away_message")
     .upsert({ id: 1, body: text, updated_at: new Date().toISOString() });
