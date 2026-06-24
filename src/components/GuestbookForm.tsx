@@ -1,15 +1,32 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { playDing } from "@/lib/aim-sounds";
+
+const LOADING_STAGES = [
+  "connecting...",
+  "verifying user...",
+  "uploading entry...",
+  "almost there...",
+];
 
 export function GuestbookForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
+  const [stageIndex, setStageIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (!busy) { setStageIndex(0); return; }
+    const timer = setInterval(() => {
+      setStageIndex((i) => (i + 1) % LOADING_STAGES.length);
+    }, 550);
+    return () => clearInterval(timer);
+  }, [busy]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,6 +46,7 @@ export function GuestbookForm() {
       setDone(true);
       setName("");
       setBody("");
+      playDing();
       router.refresh();
     } finally {
       setBusy(false);
@@ -110,7 +128,7 @@ export function GuestbookForm() {
             rows={4}
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder="omg i love ur page!! adding u to my buddy list rn"
+            placeholder="omg i love ur page!! adding u to my buddy list rn xx"
             className={inputClass}
             style={{ fontFamily: "var(--font-mono-chat)", resize: "vertical" }}
           />
@@ -126,10 +144,10 @@ export function GuestbookForm() {
         <button
           type="submit"
           disabled={busy}
-          className="border-2 border-border bg-accent px-5 py-2 font-heading text-lg text-accent-contrast enabled:hover:bg-accent-hover disabled:opacity-50"
-          style={{ fontFamily: "var(--font-heading)" }}
+          className="btn-press border-2 border-border bg-accent px-5 py-2 font-heading text-lg text-accent-contrast enabled:hover:bg-accent-hover disabled:opacity-50"
+          style={{ fontFamily: "var(--font-heading)", boxShadow: "2px 2px 0 0 var(--border)" }}
         >
-          {busy ? "signing..." : "[ sign it! ]"}
+          {busy ? LOADING_STAGES[stageIndex] : "[ sign it! ]"}
         </button>
       </form>
     </div>
