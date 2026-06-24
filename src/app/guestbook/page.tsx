@@ -3,7 +3,7 @@ import { getSupabasePublicConfig } from "@/lib/env";
 import { fetchGuestbookEntries } from "@/lib/guestbook-db";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Guestbook",
@@ -49,11 +49,14 @@ export default async function GuestbookPage() {
           >
             {entries.length} {entries.length === 1 ? "entry" : "entries"}
           </p>
-          {entries.map((entry) => (
+          {entries.map((entry, i) => (
             <div
               key={entry.id}
-              className="border-2 border-border bg-surface p-3"
-              style={{ boxShadow: "2px 2px 0 0 var(--border)" }}
+              className="card-lift animate-slide-in border-2 border-border bg-surface p-3"
+              style={{
+                boxShadow: "2px 2px 0 0 var(--border)",
+                animationDelay: `${i * 0.06}s`,
+              }}
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2 mb-1">
                 <span
