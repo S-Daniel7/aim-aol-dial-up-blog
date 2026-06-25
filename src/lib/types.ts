@@ -24,6 +24,8 @@ export type LiveFeedEntry = {
   body: string;
   image_url: string | null;
   created_at: string;
+  tags: string[];
+  is_pinned: boolean;
 };
 
 export type GuestbookEntry = {
@@ -42,6 +44,29 @@ export type NowPlaying = {
   track_title: string;
   artist_name: string;
   updated_at: string;
+};
+
+export type SiteCurrently = {
+  reading: string | null;
+  watching: string | null;
+  listening: string | null;
+  thinking: string | null;
+  updated_at: string;
+};
+
+export type SiteMood = {
+  mood: string;
+  updated_at: string;
+};
+
+export type AskQuestion = {
+  id: string;
+  created_at: string;
+  question: string;
+  answer: string | null;
+  answered_at: string | null;
+  is_visible: boolean;
+  is_featured: boolean;
 };
 
 export type BoardItem = {

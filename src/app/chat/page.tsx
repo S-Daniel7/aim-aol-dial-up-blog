@@ -1,10 +1,5 @@
-import { CreativeChatWindow } from "@/components/CreativeChatWindow";
-
-export const metadata = {
-  title: "Creative chat",
-  description: "A retro chat window for creative project help and inspiration.",
-};
+import { redirect } from "next/navigation";
 
 export default function ChatPage() {
-  return <CreativeChatWindow />;
+  redirect("/ask");
 }

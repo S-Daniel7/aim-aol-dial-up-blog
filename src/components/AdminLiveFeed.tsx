@@ -24,12 +24,14 @@ export function AdminLiveFeed() {
   const author = getLiveFeedAuthor();
   const [entries, setEntries] = useState<LiveFeedEntry[]>([]);
   const [draft, setDraft] = useState("");
+  const [draftTags, setDraftTags] = useState("");
   const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editBody, setEditBody] = useState("");
+  const [editTags, setEditTags] = useState("");
   const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -99,6 +101,10 @@ export function AdminLiveFeed() {
     }
   }
 
+  function splitTags(raw: string): string[] {
+    return raw.split(",").map((t) => t.trim().toLowerCase()).filter((t) => t.length > 0);
+  }
+
   async function onPost(e: React.FormEvent) {
     e.preventDefault();
     const text = draft.trim().replace(/\s+/g, " ");
@@ -113,6 +119,7 @@ export function AdminLiveFeed() {
         body: JSON.stringify({
           body: text,
           imageUrl: pendingImageUrl,
+          tags: splitTags(draftTags),
         }),
       });
       const raw = await res.text();
@@ -128,6 +135,7 @@ export function AdminLiveFeed() {
         return;
       }
       setDraft("");
+      setDraftTags("");
       setPendingImageUrl(null);
       await load();
     } catch (err) {
@@ -144,13 +152,36 @@ export function AdminLiveFeed() {
   function startEdit(e: LiveFeedEntry) {
     setEditingId(e.id);
     setEditBody(e.body);
+    setEditTags((e.tags ?? []).join(", "));
     setEditImageUrl(e.image_url);
   }
 
   function cancelEdit() {
     setEditingId(null);
     setEditBody("");
+    setEditTags("");
     setEditImageUrl(null);
+  }
+
+  async function togglePin(id: string, current: boolean) {
+    setBusy(true);
+    setStatus(null);
+    try {
+      const res = await fetch(`/api/live-feed/${id}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_pinned: !current }),
+      });
+      if (!res.ok) {
+        const d = (await res.json().catch(() => ({}))) as { error?: string };
+        setStatus(d.error ?? "Pin failed");
+        return;
+      }
+      await load();
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function saveEdit(id: string) {
@@ -169,6 +200,7 @@ export function AdminLiveFeed() {
         body: JSON.stringify({
           body: text,
           imageUrl: editImageUrl,
+          tags: splitTags(editTags),
         }),
       });
       const raw = await res.text();
@@ -255,7 +287,14 @@ export function AdminLiveFeed() {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder="Caption / line of text…"
-          className="mb-3 w-full border-2 border-border bg-page-bg px-3 py-2 text-sm text-text"
+          className="mb-2 w-full border-2 border-border bg-page-bg px-3 py-2 text-sm text-text"
+        />
+        <input
+          value={draftTags}
+          onChange={(e) => setDraftTags(e.target.value)}
+          placeholder="tags (comma separated, e.g. music, daily)"
+          className="mb-3 w-full border-2 border-border bg-page-bg px-3 py-2 font-mono text-xs text-muted"
+          style={{ fontFamily: "var(--font-mono-chat)" }}
         />
         <div className="mb-3 flex flex-wrap items-center gap-3">
           <label className="inline-block cursor-pointer border-2 border-border bg-surface-2 px-3 py-2 text-sm hover:bg-page-bg disabled:opacity-50">
@@ -327,6 +366,13 @@ export function AdminLiveFeed() {
                       placeholder="Caption…"
                       className="w-full border-2 border-border bg-surface px-2 py-1.5 text-text"
                     />
+                    <input
+                      value={editTags}
+                      onChange={(ev) => setEditTags(ev.target.value)}
+                      placeholder="tags (comma separated)"
+                      className="w-full border-2 border-border bg-surface px-2 py-1.5 font-mono text-xs text-muted"
+                      style={{ fontFamily: "var(--font-mono-chat)" }}
+                    />
                     <div className="flex flex-wrap items-center gap-2">
                       <label className="cursor-pointer border-2 border-border bg-surface-2 px-2 py-1 text-xs">
                         Change image
@@ -393,6 +439,13 @@ export function AdminLiveFeed() {
                     {e.body ? (
                       <p className="leading-relaxed text-text">{e.body}</p>
                     ) : null}
+                    {(e.tags ?? []).length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {(e.tags ?? []).map((t) => (
+                          <span key={t} className="border border-border bg-surface px-1.5 font-mono text-[10px] text-muted">#{t}</span>
+                        ))}
+                      </div>
+                    )}
                     <div className="mt-2 flex gap-3 text-xs">
                       <button
                         type="button"
@@ -400,6 +453,14 @@ export function AdminLiveFeed() {
                         className="text-link underline"
                       >
                         Edit
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void togglePin(e.id, e.is_pinned ?? false)}
+                        className={e.is_pinned ? "text-accent underline" : "text-muted underline"}
+                      >
+                        {e.is_pinned ? "★ unpin" : "pin"}
                       </button>
                       <button
                         type="button"

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const data = await fetchPostBySlug(slug);
   if (!data) return { title: "Not found" };
-  return { title: `${data.post.title} · chat log` };
+  return { title: data.post.title ?? "chat log" };
 }
 
 export default async function PostPage({ params }: Props) {

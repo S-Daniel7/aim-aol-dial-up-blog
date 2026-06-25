@@ -24,10 +24,25 @@ export function BoardCanvas({ items }: Props) {
         className="border-2 border-border bg-surface px-3 py-2 text-sm"
         style={{ boxShadow: "3px 3px 0 0 var(--border)" }}
       >
-        <div className="font-heading text-xl text-accent">board</div>
+        <div className="flex items-center justify-between">
+          <div className="font-heading text-xl text-accent">board</div>
+          <div
+            className="flex items-center gap-2 font-mono text-[10px] text-muted"
+            style={{ fontFamily: "var(--font-mono-chat)" }}
+          >
+            <span className="online-dot" aria-hidden />
+            click items to expand
+          </div>
+        </div>
       </div>
 
       <div className="board-shell border-2 border-border bg-surface p-3">
+        <p
+          className="mb-2 font-mono text-[10px] text-muted sm:hidden"
+          style={{ fontFamily: "var(--font-mono-chat)" }}
+        >
+          tip: best explored on desktop · rotate to landscape for more space
+        </p>
         <div
           className="board-surface relative overflow-hidden"
           style={{
@@ -38,19 +53,20 @@ export function BoardCanvas({ items }: Props) {
             boxShadow: "inset 0 0 0 6px var(--border)",
           }}
         >
-          {items.map((item) =>
+          {items.map((item, idx) =>
             item.kind === "image" && item.image_url ? (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => setOpenItem(item)}
-                className="absolute block border border-transparent bg-transparent p-0 transition hover:border-border focus:border-border focus:outline-none"
+                className="animate-slide-in absolute block border border-transparent bg-transparent p-0 transition hover:border-border focus:border-border focus:outline-none"
                 style={{
                   left: pct(item.x, BOARD_WIDTH),
                   top: pct(item.y, BOARD_HEIGHT),
                   width: pct(item.width, BOARD_WIDTH),
                   zIndex: item.z_index,
                   transform: `rotate(${item.rotation}deg)`,
+                  animationDelay: `${idx * 0.07}s`,
                 }}
                 aria-label="Open pinned image"
               >
@@ -66,7 +82,7 @@ export function BoardCanvas({ items }: Props) {
             ) : (
               <div
                 key={item.id}
-                className="absolute whitespace-pre-wrap break-words px-1 py-0.5 text-left"
+                className="animate-slide-in absolute whitespace-pre-wrap break-words px-1 py-0.5 text-left"
                 style={{
                   left: pct(item.x, BOARD_WIDTH),
                   top: pct(item.y, BOARD_HEIGHT),
@@ -77,6 +93,7 @@ export function BoardCanvas({ items }: Props) {
                       : pct(item.height, BOARD_HEIGHT),
                   zIndex: item.z_index,
                   transform: `rotate(${item.rotation}deg)`,
+                  animationDelay: `${idx * 0.07}s`,
                   fontFamily: item.font_family ?? "Verdana",
                   fontSize: `clamp(10px, ${(Number(item.font_size ?? 24) / BOARD_WIDTH) * 100}vw, ${item.font_size ?? 24}px)`,
                   fontStyle: item.is_italic ? "italic" : "normal",

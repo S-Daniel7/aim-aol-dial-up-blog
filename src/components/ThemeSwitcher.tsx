@@ -27,7 +27,7 @@ export function ThemeSwitcher() {
 
   return (
     <label className="flex items-center gap-2 text-sm">
-      <span className="text-muted whitespace-nowrap">Theme</span>
+      <span className="text-muted whitespace-nowrap">theme:</span>
       <select
         value={theme}
         onChange={(e) => onChange(e.target.value as SiteThemeId)}

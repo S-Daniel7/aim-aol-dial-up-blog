@@ -3,7 +3,7 @@ import { fetchBoardItems } from "@/lib/board-db";
 import { getSupabasePublicConfig } from "@/lib/env";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 
 export const metadata: Metadata = {
   title: "Board",

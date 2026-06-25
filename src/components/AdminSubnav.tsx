@@ -44,10 +44,38 @@ export function AdminSubnav() {
         </Link>
         <span className="text-muted">*</span>
         <Link
+          href="/admin/ask"
+          className="text-link no-underline hover:text-link-hover"
+        >
+          Ask box
+        </Link>
+        <span className="text-muted">*</span>
+        <Link
           href="/admin/status"
           className="text-link no-underline hover:text-link-hover"
         >
           Status
+        </Link>
+        <span className="text-muted">*</span>
+        <Link
+          href="/admin/about"
+          className="text-link no-underline hover:text-link-hover"
+        >
+          About
+        </Link>
+        <span className="text-muted">*</span>
+        <Link
+          href="/admin/links"
+          className="text-link no-underline hover:text-link-hover"
+        >
+          Links
+        </Link>
+        <span className="text-muted">*</span>
+        <Link
+          href="/admin/stamps"
+          className="text-link no-underline hover:text-link-hover"
+        >
+          Stamps
         </Link>
       </div>
       <button

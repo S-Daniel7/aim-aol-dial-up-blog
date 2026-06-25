@@ -63,7 +63,7 @@ export function ActivityTimeline({ countsByDate }: Props) {
         </span>
       </div>
 
-      <div className="overflow-x-auto p-3 pb-2">
+      <div className="overflow-x-auto touch-pan-x p-3 pb-2">
         {/* Pixel columns */}
         <div
           style={{
