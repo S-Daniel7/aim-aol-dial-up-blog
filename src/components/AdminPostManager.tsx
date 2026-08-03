@@ -24,6 +24,7 @@ type Draft = {
   title: string;
   slug: string;
   blurb: string;
+  myHandle: string;
   handlesHint: string;
   lines: EditableLine[];
   images: PendingImage[];
@@ -48,10 +49,23 @@ function blankDraft(): Draft {
     title: "",
     slug: "",
     blurb: "",
+    myHandle: "",
     handlesHint: "",
     lines: [newLine()],
     images: [],
   };
+}
+
+function advanceTime(last: string): string {
+  const m = last.trim().match(/^(\d{1,2}):(\d{2})(\s*[AaPp][Mm])?$/);
+  if (!m) return last;
+  let h = parseInt(m[1]);
+  let min = parseInt(m[2]) + 2;
+  const period = m[3]?.trim().toUpperCase();
+  if (min >= 60) { min -= 60; h += 1; }
+  if (period && h > 12) h -= 12;
+  const hhmm = `${h}:${String(min).padStart(2, "0")}`;
+  return period ? `${hhmm} ${period}` : hhmm;
 }
 
 function draftFromPost(post: DbPost, messages: DbMessage[]): Draft {
@@ -65,6 +79,7 @@ function draftFromPost(post: DbPost, messages: DbMessage[]): Draft {
     title: post.title,
     slug: post.slug,
     blurb: post.blurb ?? "",
+    myHandle: post.my_handle ?? "",
     handlesHint: handles.join("\n"),
     lines: textMessages.length
       ? textMessages.map((m) =>
@@ -180,7 +195,27 @@ export function AdminPostManager() {
   }
 
   function addLine() {
-    setDraft((prev) => ({ ...prev, lines: [...prev.lines, newLine()] }));
+    setDraft((prev) => {
+      const last = prev.lines.at(-1);
+      const handles = parseHandleSuggestions(prev.handlesHint);
+      const nextTime = last?.time_label ? advanceTime(last.time_label) : "";
+      const nextSender = handles.length > 0
+        ? handles[(handles.indexOf(last?.sender ?? "") + 1) % handles.length] ?? ""
+        : "";
+      return { ...prev, lines: [...prev.lines, newLine({ time_label: nextTime, sender: nextSender })] };
+    });
+  }
+
+  function moveLine(id: string, dir: "up" | "down") {
+    setDraft((prev) => {
+      const idx = prev.lines.findIndex((r) => r.id === id);
+      if (idx < 0) return prev;
+      const next = [...prev.lines];
+      const swap = dir === "up" ? idx - 1 : idx + 1;
+      if (swap < 0 || swap >= next.length) return prev;
+      [next[idx], next[swap]] = [next[swap], next[idx]];
+      return { ...prev, lines: next };
+    });
   }
 
   function removeLine(id: string) {
@@ -260,6 +295,7 @@ export function AdminPostManager() {
           title: draft.title.trim(),
           slug: draft.slug.trim(),
           blurb: draft.blurb.trim() || null,
+          myHandle: draft.myHandle.trim() || null,
           chatText,
           images: draft.images.map((image) => ({
             url: image.url,
@@ -361,25 +397,36 @@ export function AdminPostManager() {
                     </div>
                   </div>
 
-                  <div className="border-2 border-border bg-page-bg p-3">
-                    <label className="block text-xs font-semibold text-text">
-                      Names in this chat
-                    </label>
-                    <textarea
-                      value={draft.handlesHint}
-                      onChange={(e) =>
-                        updateDraft({ handlesHint: e.target.value })
-                      }
-                      rows={2}
-                      className="mt-1 w-full resize-y border-2 border-border bg-surface px-2 py-1.5 text-sm text-text"
-                    />
+                  <div className="border-2 border-border bg-page-bg p-3 space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-text">
+                        Names in this chat
+                      </label>
+                      <textarea
+                        value={draft.handlesHint}
+                        onChange={(e) =>
+                          updateDraft({ handlesHint: e.target.value })
+                        }
+                        rows={2}
+                        className="mt-1 w-full resize-y border-2 border-border bg-surface px-2 py-1.5 text-sm text-text"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text">
+                        Your handle <span className="font-normal text-muted">(shown on the right)</span>
+                      </label>
+                      <select
+                        value={draft.myHandle}
+                        onChange={(e) => updateDraft({ myHandle: e.target.value })}
+                        className="mt-1 border-2 border-border bg-surface px-2 py-1.5 text-sm text-text"
+                      >
+                        <option value="">— none —</option>
+                        {handleOptions.map((h) => (
+                          <option key={h} value={h}>{h}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-
-                  <datalist id={`chat-handle-options-${item.post.id}`}>
-                    {handleOptions.map((handle) => (
-                      <option key={handle} value={handle} />
-                    ))}
-                  </datalist>
 
                   <div className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -395,49 +442,63 @@ export function AdminPostManager() {
                     {draft.lines.map((line, idx) => (
                       <div
                         key={line.id}
-                        className="border-2 border-border bg-page-bg p-3"
+                        className="border-2 border-border bg-page-bg"
                       >
-                        <div className="mb-2 text-xs text-muted">
-                          Line {idx + 1}
-                        </div>
-                        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,7rem)_minmax(0,1fr)]">
-                          <input
-                            list={`chat-handle-options-${item.post.id}`}
+                        <div className="flex items-center gap-2 border-b border-border bg-surface-2 px-3 py-2">
+                          <select
                             value={line.sender}
                             onChange={(e) =>
                               updateLine(line.id, { sender: e.target.value })
                             }
-                            placeholder="name"
-                            className="border-2 border-border bg-surface px-2 py-1.5 text-sm text-text"
-                          />
+                            className="w-32 border border-border bg-page-bg px-2 py-1 text-sm text-text font-semibold"
+                          >
+                            {handleOptions.length === 0 && <option value="">sender</option>}
+                            {handleOptions.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                          <span className="text-muted text-xs">at</span>
                           <input
                             value={line.time_label}
                             onChange={(e) =>
-                              updateLine(line.id, {
-                                time_label: e.target.value,
-                              })
+                              updateLine(line.id, { time_label: e.target.value })
                             }
-                            placeholder="time"
-                            className="border-2 border-border bg-surface px-2 py-1.5 text-sm text-text"
+                            placeholder="10:02 PM"
+                            className="w-24 border border-border bg-page-bg px-2 py-1 text-sm text-muted"
                           />
-                          <textarea
-                            value={line.body}
-                            onChange={(e) =>
-                              updateLine(line.id, { body: e.target.value })
-                            }
-                            rows={2}
-                            placeholder="message"
-                            className="sm:col-span-3 resize-y border-2 border-border bg-surface px-2 py-1.5 text-sm text-text"
-                          />
+                          <div className="ml-auto flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => moveLine(line.id, "up")}
+                              disabled={idx === 0}
+                              title="Move up"
+                              className="px-1 text-muted hover:text-text disabled:opacity-20"
+                            >↑</button>
+                            <button
+                              type="button"
+                              onClick={() => moveLine(line.id, "down")}
+                              disabled={idx === draft.lines.length - 1}
+                              title="Move down"
+                              className="px-1 text-muted hover:text-text disabled:opacity-20"
+                            >↓</button>
+                            <button
+                              type="button"
+                              onClick={() => removeLine(line.id)}
+                              disabled={draft.lines.length <= 1}
+                              title="Remove"
+                              className="px-1 text-accent hover:text-text disabled:opacity-20"
+                            >×</button>
+                          </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removeLine(line.id)}
-                          disabled={draft.lines.length <= 1}
-                          className="mt-2 text-xs text-accent underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-40"
-                        >
-                          Remove line
-                        </button>
+                        <textarea
+                          value={line.body}
+                          onChange={(e) =>
+                            updateLine(line.id, { body: e.target.value })
+                          }
+                          rows={2}
+                          placeholder="message…"
+                          className="w-full resize-y bg-page-bg px-3 py-2 text-sm text-text outline-none placeholder:text-muted"
+                        />
                       </div>
                     ))}
                   </div>
