@@ -24,6 +24,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     title?: string;
     slug?: string;
     blurb?: string | null;
+    myHandle?: string | null;
     chatText?: string;
     images?: ImagePayload[];
   };
@@ -41,6 +42,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   const slug = slugify((body.slug ?? "").trim() || title);
   const blurb = body.blurb?.trim() || null;
+  const myHandle = body.myHandle?.trim() || null;
   const chatText = body.chatText ?? "";
   let textMessages: ReturnType<typeof parseChatLines> = [];
   try {
@@ -104,10 +106,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   const { data: post, error: postErr } = await supabase
     .from("posts")
-    .update({ title, slug, blurb })
+    .update({ title, slug, blurb, my_handle: myHandle })
     .eq("id", id)
     .eq("workspace_id", access.workspaceId)
-    .select("id,title,slug,blurb,created_at")
+    .select("id,title,slug,blurb,my_handle,created_at")
     .single();
   if (postErr) {
     const status = postErr.code === "23505" ? 409 : 500;

@@ -6,7 +6,7 @@ export async function fetchPosts(): Promise<DbPost[]> {
   if (!supabase) return [];
   const { data } = await supabase
     .from("posts")
-    .select("id,title,slug,blurb,created_at")
+    .select("id,title,slug,blurb,my_handle,created_at")
     .order("created_at", { ascending: false });
   return (data as DbPost[]) ?? [];
 }
@@ -18,7 +18,7 @@ export async function fetchPostBySlug(
   if (!supabase) return null;
   const { data: post } = await supabase
     .from("posts")
-    .select("id,title,slug,blurb,created_at")
+    .select("id,title,slug,blurb,my_handle,created_at")
     .eq("slug", slug)
     .maybeSingle();
   if (!post) return null;
