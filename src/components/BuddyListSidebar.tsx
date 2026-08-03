@@ -1,3 +1,8 @@
+"use client";
+
+import { createPublicClient } from "@/lib/supabase/public";
+import { useEffect, useState } from "react";
+
 const AWAY_BUDDIES: { name: string; awayMsg: string }[] = [
   { name: "glittergrrrl94", awayMsg: "brb mom said dinner is ready" },
   { name: "sk8erb0y_2k1", awayMsg: "at the skate park!!! back l8r 🛹" },
@@ -24,6 +29,32 @@ function TitleBar() {
 }
 
 export function BuddyListSidebar() {
+  const [onlineCount, setOnlineCount] = useState(1);
+
+  useEffect(() => {
+    const supabase = createPublicClient();
+    if (!supabase) return;
+
+    const channel = supabase.channel("visitor-presence", {
+      config: { presence: { key: crypto.randomUUID() } },
+    });
+
+    channel
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState();
+        setOnlineCount(Math.max(1, Object.keys(state).length));
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await channel.track({ joined_at: Date.now() });
+        }
+      });
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, []);
+
   return (
     <div
       className="border-2 border-border bg-surface text-xs"
@@ -58,7 +89,7 @@ export function BuddyListSidebar() {
             className="font-mono text-[9px] uppercase tracking-widest text-muted"
             style={{ fontFamily: "var(--font-mono-chat)" }}
           >
-            online (1)
+            online ({onlineCount})
           </span>
         </div>
         <div className="px-3 py-1">
@@ -71,6 +102,17 @@ export function BuddyListSidebar() {
               soapie
             </span>
           </div>
+          {onlineCount > 1 && (
+            <div className="flex items-center gap-1.5 py-0.5">
+              <span className="online-dot" aria-hidden />
+              <span
+                className="font-mono text-[10px] text-muted italic"
+                style={{ fontFamily: "var(--font-mono-chat)" }}
+              >
+                +{onlineCount - 1} visitor{onlineCount - 1 !== 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
