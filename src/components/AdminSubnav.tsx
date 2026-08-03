@@ -1,10 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+
+const NAV_LINKS = [
+  { href: "/admin", label: "Posts", exact: true },
+  { href: "/admin/live", label: "Live feed" },
+  { href: "/admin/board", label: "Board" },
+  { href: "/admin/guestbook", label: "Guestbook" },
+  { href: "/admin/ask", label: "Ask box" },
+  { href: "/admin/stamps", label: "Stamps" },
+];
 
 export function AdminSubnav() {
   const router = useRouter();
+  const pathname = usePathname();
 
   async function logout() {
     await fetch("/api/admin/logout", { method: "POST" });
@@ -15,68 +25,20 @@ export function AdminSubnav() {
   return (
     <nav className="mb-8 flex flex-wrap items-center gap-2 border-b-2 border-border pb-3 text-sm">
       <div className="flex flex-wrap gap-2">
-        <Link
-          href="/admin"
-          className="text-link no-underline hover:text-link-hover"
-        >
-          Chat-room posts
-        </Link>
-        <span className="text-muted">*</span>
-        <Link
-          href="/admin/live"
-          className="text-link no-underline hover:text-link-hover"
-        >
-          Live feed
-        </Link>
-        <span className="text-muted">*</span>
-        <Link
-          href="/admin/board"
-          className="text-link no-underline hover:text-link-hover"
-        >
-          Board
-        </Link>
-        <span className="text-muted">*</span>
-        <Link
-          href="/admin/guestbook"
-          className="text-link no-underline hover:text-link-hover"
-        >
-          Guestbook
-        </Link>
-        <span className="text-muted">*</span>
-        <Link
-          href="/admin/ask"
-          className="text-link no-underline hover:text-link-hover"
-        >
-          Ask box
-        </Link>
-        <span className="text-muted">*</span>
-        <Link
-          href="/admin/status"
-          className="text-link no-underline hover:text-link-hover"
-        >
-          Status
-        </Link>
-        <span className="text-muted">*</span>
-        <Link
-          href="/admin/about"
-          className="text-link no-underline hover:text-link-hover"
-        >
-          About
-        </Link>
-        <span className="text-muted">*</span>
-        <Link
-          href="/admin/links"
-          className="text-link no-underline hover:text-link-hover"
-        >
-          Links
-        </Link>
-        <span className="text-muted">*</span>
-        <Link
-          href="/admin/stamps"
-          className="text-link no-underline hover:text-link-hover"
-        >
-          Stamps
-        </Link>
+        {NAV_LINKS.map(({ href, label, exact }, i) => {
+          const active = exact ? pathname === href : pathname.startsWith(href);
+          return (
+            <span key={href} className="flex items-center gap-2">
+              {i > 0 && <span className="text-muted">*</span>}
+              <Link
+                href={href}
+                className={`no-underline hover:text-link-hover ${active ? "font-bold text-accent" : "text-link"}`}
+              >
+                {label}
+              </Link>
+            </span>
+          );
+        })}
       </div>
       <button
         type="button"
