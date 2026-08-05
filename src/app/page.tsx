@@ -3,7 +3,7 @@ import { BuddyListSidebar } from "@/components/BuddyListSidebar";
 import { ChatRoomWindow } from "@/components/ChatRoomWindow";
 import { CurrentlyWidget } from "@/components/CurrentlyWidget";
 import { HitCounter } from "@/components/HitCounter";
-import { NowPlayingWidget } from "@/components/NowPlayingWidget";
+import { HomeGadgets } from "@/components/gadgets/HomeGadgets";
 import { CountdownWidget } from "@/components/CountdownWidget";
 import { RecentThoughts } from "@/components/RecentThoughts";
 import { TypewriterIntro } from "@/components/TypewriterIntro";
@@ -11,6 +11,9 @@ import { getSupabasePublicConfig } from "@/lib/env";
 import { fetchLiveFeedCountsByDate, fetchRecentLiveFeedEntries } from "@/lib/live-feed-db";
 import { fetchMessagesForPosts, fetchPosts } from "@/lib/posts";
 import { fetchAwayMessage } from "@/lib/status-db";
+import { fetchRecentGuestbook } from "@/lib/guestbook-db";
+import { fetchVisitorCounts } from "@/lib/visitors-db";
+import { fetchWeather } from "@/lib/weather";
 import Link from "next/link";
 import { NudgeButton } from "@/components/NudgeButton";
 import { TypingIndicator } from "@/components/TypingIndicator";
@@ -20,7 +23,8 @@ export const revalidate = 30;
 
 export default async function Home() {
   const configured = !!getSupabasePublicConfig();
-  const [posts, countsByDate, awayMessage, currently, mood, recentEntries, countdown] = configured
+  const weatherPromise = fetchWeather();
+  const [posts, countsByDate, awayMessage, currently, mood, recentEntries, countdown, guestbook, visitors] = configured
     ? await Promise.all([
         fetchPosts(),
         fetchLiveFeedCountsByDate(),
@@ -29,8 +33,11 @@ export default async function Home() {
         fetchMood(),
         fetchRecentLiveFeedEntries(3),
         fetchCountdown(),
+        fetchRecentGuestbook(8),
+        fetchVisitorCounts(),
       ])
-    : [[], {}, null, null, null, [], null];
+    : [[], {}, null, null, null, [], null, [], []];
+  const weather = await weatherPromise;
   const byPost = configured
     ? await fetchMessagesForPosts((posts as { id: string }[]).map((p) => p.id))
     : {};
@@ -143,11 +150,15 @@ export default async function Home() {
         </div>
       </div>
 
+      {/* Ambient desktop gadgets — side rails on wide screens, inline grid otherwise */}
+      <HomeGadgets
+        weather={weather}
+        guestbook={guestbook as import("@/lib/types").GuestbookEntry[]}
+        visitors={visitors as import("@/lib/visitors-db").VisitorCount[]}
+      />
+
       {/* Countdown / days since */}
       <CountdownWidget initialData={countdown as import("@/lib/site-widgets-db").CountdownData | null} />
-
-      {/* Spotify now playing */}
-      <NowPlayingWidget />
 
       {/* Currently */}
       {currently && <CurrentlyWidget currently={currently as import("@/lib/types").SiteCurrently} />}
