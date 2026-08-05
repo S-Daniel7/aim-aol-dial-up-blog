@@ -3,6 +3,7 @@ export type DbPost = {
   title: string;
   slug: string;
   blurb: string | null;
+  my_handle: string | null;
   created_at: string;
 };
 

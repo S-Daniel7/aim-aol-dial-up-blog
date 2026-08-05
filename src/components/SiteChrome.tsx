@@ -1,11 +1,27 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { SearchBox } from "@/components/SearchBox";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { AimSoundsToggle } from "@/components/AimSoundsToggle";
 import { CursorSparkle } from "@/components/CursorSparkle";
 import { HoverSounds } from "@/components/HoverSounds";
 
+const NAV_LINKS = [
+  { href: "/", label: "~* homepage *~", exact: true },
+  { href: "/live", label: "livefeed" },
+  { href: "/board", label: "pinboard" },
+  { href: "/ask", label: "ask" },
+  { href: "/guestbook", label: "guestbook" },
+  { href: "/about", label: "about" },
+  { href: "/stamps", label: "i was here" },
+  { href: "/links", label: "links" },
+  { href: "/stats", label: "stats" },
+];
 
 export function SiteChrome({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   return (
     <div className="min-h-screen flex flex-col">
       <CursorSparkle />
@@ -28,79 +44,24 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
       <header className="border-b-2 border-border bg-surface">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-2 overflow-x-auto sm:flex-wrap sm:gap-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            <Link
-              href="/"
-              className="font-heading text-xl tracking-wide text-text no-underline hover:text-accent"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              ~* homepage *~
-            </Link>
-            <span className="text-muted select-none">-+-</span>
-            <Link
-              href="/live"
-              className="font-heading text-xl tracking-wide text-text no-underline hover:text-accent"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              livefeed
-            </Link>
-            <span className="text-muted select-none">-+-</span>
-            <Link
-              href="/board"
-              className="font-heading text-xl tracking-wide text-text no-underline hover:text-accent"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              pinboard
-            </Link>
-            <span className="text-muted select-none">-+-</span>
-            <Link
-              href="/ask"
-              className="font-heading text-xl tracking-wide text-text no-underline hover:text-accent"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              ask
-            </Link>
-            <span className="text-muted select-none">-+-</span>
-            <Link
-              href="/guestbook"
-              className="font-heading text-xl tracking-wide text-text no-underline hover:text-accent"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              guestbook
-            </Link>
-            <span className="text-muted select-none">-+-</span>
-            <Link
-              href="/about"
-              className="font-heading text-xl tracking-wide text-text no-underline hover:text-accent"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              about
-            </Link>
-            <span className="text-muted select-none">-+-</span>
-            <Link
-              href="/stamps"
-              className="font-heading text-xl tracking-wide text-text no-underline hover:text-accent"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              i was here
-            </Link>
-            <span className="text-muted select-none">-+-</span>
-            <Link
-              href="/links"
-              className="font-heading text-xl tracking-wide text-text no-underline hover:text-accent"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              links
-            </Link>
-            <span className="text-muted select-none">-+-</span>
-            <Link
-              href="/stats"
-              className="font-heading text-xl tracking-wide text-text no-underline hover:text-accent"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              stats
-            </Link>
+            {NAV_LINKS.map(({ href, label, exact }, i) => {
+              const active = exact ? pathname === href : pathname.startsWith(href);
+              return (
+                <span key={href} className="flex items-center gap-2">
+                  {i > 0 && <span className="text-muted select-none">-+-</span>}
+                  <Link
+                    href={href}
+                    className={`font-heading text-xl tracking-wide no-underline hover:text-accent ${active ? "text-accent underline" : "text-text"}`}
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    {label}
+                  </Link>
+                </span>
+              );
+            })}
           </div>
           <div className="flex items-center gap-2">
+            <SearchBox />
             <AimSoundsToggle />
             <ThemeSwitcher />
           </div>

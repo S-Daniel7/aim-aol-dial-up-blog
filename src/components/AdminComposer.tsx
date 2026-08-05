@@ -10,6 +10,18 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+function advanceTime(last: string): string {
+  const m = last.trim().match(/^(\d{1,2}):(\d{2})(\s*[AaPp][Mm])?$/);
+  if (!m) return last;
+  let h = parseInt(m[1]);
+  let min = parseInt(m[2]) + 2;
+  const period = m[3]?.trim().toUpperCase();
+  if (min >= 60) { min -= 60; h += 1; }
+  if (period && h > 12) h -= 12;
+  const hhmm = `${h}:${String(min).padStart(2, "0")}`;
+  return period ? `${hhmm} ${period}` : hhmm;
+}
+
 type PendingImage = {
   id: string;
   url: string;
@@ -34,6 +46,7 @@ export function AdminComposer() {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [blurb, setBlurb] = useState("");
+  const [myHandle, setMyHandle] = useState("");
   const [handlesHint, setHandlesHint] = useState("alice\nbob");
   const [lines, setLines] = useState(() => [
     newLine({
@@ -76,11 +89,30 @@ export function AdminComposer() {
   }
 
   function addLine() {
-    setLines((prev) => [...prev, newLine()]);
+    setLines((prev) => {
+      const last = prev.at(-1);
+      const nextTime = last?.time_label ? advanceTime(last.time_label) : "";
+      const nextSender = handleOptions.length > 0
+        ? handleOptions[(handleOptions.indexOf(last?.sender ?? "") + 1) % handleOptions.length] ?? ""
+        : "";
+      return [...prev, newLine({ time_label: nextTime, sender: nextSender })];
+    });
   }
 
   function removeLine(id: string) {
     setLines((prev) => (prev.length <= 1 ? prev : prev.filter((r) => r.id !== id)));
+  }
+
+  function moveLine(id: string, dir: "up" | "down") {
+    setLines((prev) => {
+      const idx = prev.findIndex((r) => r.id === id);
+      if (idx < 0) return prev;
+      const next = [...prev];
+      const swap = dir === "up" ? idx - 1 : idx + 1;
+      if (swap < 0 || swap >= next.length) return prev;
+      [next[idx], next[swap]] = [next[swap], next[idx]];
+      return next;
+    });
   }
 
   async function uploadFile(file: File) {
@@ -154,6 +186,7 @@ export function AdminComposer() {
           title: title.trim(),
           slug: slug.trim() || undefined,
           blurb: blurb.trim() || null,
+          myHandle: myHandle.trim() || null,
           chatText,
           images: images.map((im) => ({
             url: im.url,
@@ -186,12 +219,6 @@ export function AdminComposer() {
   return (
     <div className="space-y-8">
       <form onSubmit={onSubmit} className="space-y-6 border-2 border-border bg-surface p-6">
-        <datalist id="chat-handle-options">
-          {handleOptions.map((h) => (
-            <option key={h} value={h} />
-          ))}
-        </datalist>
-
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label className="block text-sm text-muted">Title</label>
@@ -226,20 +253,36 @@ export function AdminComposer() {
           </div>
         </div>
 
-        <div className="border-2 border-border bg-page-bg p-4">
-          <label className="block text-sm font-semibold text-text">
-            Names in this chat
-          </label>
-          <p className="mb-2 text-xs text-muted">
-            One per line or comma-separated. Used as autocomplete for each line’s{" "}
-            <strong>name</strong> field (you can still type anything).
-          </p>
-          <textarea
-            value={handlesHint}
-            onChange={(e) => setHandlesHint(e.target.value)}
-            rows={3}
-            className="w-full resize-y border-2 border-border bg-surface px-3 py-2 text-sm text-text"
-          />
+        <div className="border-2 border-border bg-page-bg p-4 space-y-3">
+          <div>
+            <label className="block text-sm font-semibold text-text">
+              Names in this chat
+            </label>
+            <p className="mb-2 text-xs text-muted">
+              One per line or comma-separated — these become the sender options for each message.
+            </p>
+            <textarea
+              value={handlesHint}
+              onChange={(e) => setHandlesHint(e.target.value)}
+              rows={3}
+              className="w-full resize-y border-2 border-border bg-surface px-3 py-2 text-sm text-text"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-text">
+              Your handle <span className="font-normal text-muted">(shown on the right)</span>
+            </label>
+            <select
+              value={myHandle}
+              onChange={(e) => setMyHandle(e.target.value)}
+              className="mt-1 border-2 border-border bg-surface px-2 py-1.5 text-sm text-text"
+            >
+              <option value="">— none —</option>
+              {handleOptions.map((h) => (
+                <option key={h} value={h}>{h}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div>
@@ -262,58 +305,69 @@ export function AdminComposer() {
             </button>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             {lines.map((row, idx) => (
               <div
                 key={row.id}
-                className="border-2 border-border bg-page-bg p-3"
+                className="border-2 border-border bg-page-bg"
               >
-                <div className="mb-2 text-xs text-muted">Line {idx + 1}</div>
-                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,7rem)_minmax(0,1fr)]">
-                  <div>
-                    <label className="block text-xs text-muted">Name</label>
-                    <input
-                      list="chat-handle-options"
-                      value={row.sender}
-                      onChange={(e) =>
-                        updateLine(row.id, { sender: e.target.value })
-                      }
-                      placeholder="alice"
-                      className="mt-0.5 w-full border-2 border-border bg-surface px-2 py-1.5 text-sm text-text"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-muted">Time</label>
-                    <input
-                      value={row.time_label}
-                      onChange={(e) =>
-                        updateLine(row.id, { time_label: e.target.value })
-                      }
-                      placeholder="10:02 PM"
-                      className="mt-0.5 w-full border-2 border-border bg-surface px-2 py-1.5 text-sm text-text"
-                    />
-                  </div>
-                  <div className="sm:col-span-3">
-                    <label className="block text-xs text-muted">Message</label>
-                    <textarea
-                      value={row.body}
-                      onChange={(e) =>
-                        updateLine(row.id, { body: e.target.value })
-                      }
-                      rows={2}
-                      placeholder="what they said…"
-                      className="mt-0.5 w-full resize-y border-2 border-border bg-surface px-2 py-1.5 text-sm text-text"
-                    />
+                {/* Row header: sender + time + controls */}
+                <div className="flex items-center gap-2 border-b border-border bg-surface-2 px-3 py-2">
+                  <select
+                    value={row.sender}
+                    onChange={(e) => updateLine(row.id, { sender: e.target.value })}
+                    className="w-32 border border-border bg-page-bg px-2 py-1 text-sm text-text font-semibold"
+                  >
+                    {handleOptions.length === 0 && <option value="">sender</option>}
+                    {handleOptions.map((h) => (
+                      <option key={h} value={h}>{h}</option>
+                    ))}
+                  </select>
+                  <span className="text-muted text-xs">at</span>
+                  <input
+                    value={row.time_label}
+                    onChange={(e) => updateLine(row.id, { time_label: e.target.value })}
+                    placeholder="10:02 PM"
+                    className="w-24 border border-border bg-page-bg px-2 py-1 text-sm text-muted"
+                  />
+                  <div className="ml-auto flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => moveLine(row.id, "up")}
+                      disabled={idx === 0}
+                      title="Move up"
+                      className="px-1 text-muted hover:text-text disabled:opacity-20"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveLine(row.id, "down")}
+                      disabled={idx === lines.length - 1}
+                      title="Move down"
+                      className="px-1 text-muted hover:text-text disabled:opacity-20"
+                    >
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeLine(row.id)}
+                      disabled={lines.length <= 1}
+                      title="Remove"
+                      className="px-1 text-accent hover:text-text disabled:opacity-20"
+                    >
+                      ×
+                    </button>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => removeLine(row.id)}
-                  disabled={lines.length <= 1}
-                  className="mt-2 text-xs text-accent underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-40"
-                >
-                  Remove line
-                </button>
+                {/* Message body */}
+                <textarea
+                  value={row.body}
+                  onChange={(e) => updateLine(row.id, { body: e.target.value })}
+                  rows={2}
+                  placeholder="message…"
+                  className="w-full resize-y bg-page-bg px-3 py-2 text-sm text-text outline-none placeholder:text-muted"
+                />
               </div>
             ))}
           </div>

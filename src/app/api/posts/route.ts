@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     req.nextUrl.searchParams.get("includeMessages") === "1";
   const { data: posts, error } = await supabase
     .from("posts")
-    .select("id,title,slug,blurb,created_at")
+    .select("id,title,slug,blurb,my_handle,created_at")
     .order("created_at", { ascending: false });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
     title?: string;
     slug?: string;
     blurb?: string | null;
+    myHandle?: string | null;
     chatText?: string;
     images?: ImagePayload[];
   };
@@ -77,6 +78,7 @@ export async function POST(req: NextRequest) {
   }
   const slug = slugify((body.slug ?? "").trim() || title);
   const blurb = body.blurb?.trim() || null;
+  const myHandle = body.myHandle?.trim() || null;
   const chatText = body.chatText ?? "";
   let textMessages: ReturnType<typeof parseChatLines> = [];
   try {
@@ -93,6 +95,7 @@ export async function POST(req: NextRequest) {
       title,
       slug,
       blurb,
+      my_handle: myHandle,
       author_id: access.user.id,
       workspace_id: access.workspaceId,
       visibility: "public",

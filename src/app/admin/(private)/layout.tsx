@@ -1,3 +1,4 @@
+import { AdminSidebar } from "@/components/AdminSidebar";
 import { AdminSubnav } from "@/components/AdminSubnav";
 import {
   EDITOR_ROLES,
@@ -17,9 +18,12 @@ export default async function PrivateAdminLayout({
     redirect("/admin/login");
   }
   return (
-    <>
-      <AdminSubnav />
-      {children}
-    </>
+    <div className="flex gap-8">
+      <AdminSidebar />
+      <div className="min-w-0 flex-1">
+        <AdminSubnav />
+        {children}
+      </div>
+    </div>
   );
 }

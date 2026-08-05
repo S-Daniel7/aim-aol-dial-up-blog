@@ -1,6 +1,12 @@
+import { EDITOR_ROLES, getWorkspaceAccess } from "@/lib/admin-session";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
+  const access = await getWorkspaceAccess(req, EDITOR_ROLES);
+  if (!access) {
+    return NextResponse.redirect(new URL("/admin/login", req.url));
+  }
+
   const code = req.nextUrl.searchParams.get("code");
   const errorParam = req.nextUrl.searchParams.get("error");
   const stateParam = req.nextUrl.searchParams.get("state");
