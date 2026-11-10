@@ -22,13 +22,25 @@ export default async function PostPage({ params }: Props) {
 
   return (
     <div>
+      <p
+        className="mb-3 font-mono text-[10px] text-muted"
+        style={{ fontFamily: "var(--font-mono-chat)" }}
+      >
+        <Link href="/" className="hover:text-accent">
+          home
+        </Link>{" "}
+        / {data.post.title ?? "chat log"}
+      </p>
       <ChatRoomWindow
         post={data.post}
         messages={data.messages}
         linkToPost={false}
+        animated
       />
       <p className="text-sm text-muted">
-        <Link href="/">← back to all rooms</Link>
+        <Link href="/">← back to all rooms</Link> &nbsp;·&nbsp;{" "}
+        <Link href="/board">pinboard</Link> &nbsp;·&nbsp;{" "}
+        <Link href="/guestbook">sign the guestbook</Link>
       </p>
     </div>
   );

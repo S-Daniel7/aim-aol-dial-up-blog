@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TypingDots } from "@/components/TypingDots";
 
 const SCREEN_NAME = "soapie";
 
@@ -48,15 +49,7 @@ export function TypingIndicator() {
       >
         {SCREEN_NAME} is typing
       </span>
-      <span className="flex items-end gap-px pb-px">
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="inline-block h-1 w-1 rounded-full bg-muted"
-            style={{ animation: `dot-pulse 1s ease-in-out ${i * 0.2}s infinite` }}
-          />
-        ))}
-      </span>
+      <TypingDots />
     </div>
   );
 }
