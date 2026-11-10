@@ -6,6 +6,14 @@ const CHARS = ["✦", "★", "✧", "·", "✦", "✧"];
 
 export function CursorSparkle() {
   useEffect(() => {
+    // Skip for reduced-motion users and touch-only devices.
+    if (
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      !window.matchMedia("(pointer: fine)").matches
+    ) {
+      return;
+    }
+
     let lastFire = 0;
 
     function onMove(e: MouseEvent) {

@@ -43,7 +43,7 @@ export function NowPlayingWidget() {
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={track.albumArt}
-            alt=""
+            alt={`album art for ${track.name} by ${track.artist}`}
             width={48}
             height={48}
             style={{ imageRendering: "pixelated", flexShrink: 0 }}

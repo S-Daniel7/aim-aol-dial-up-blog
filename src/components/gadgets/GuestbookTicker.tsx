@@ -3,10 +3,38 @@
 import { GadgetWindow } from "@/components/gadgets/GadgetWindow";
 import type { GuestbookEntry } from "@/lib/types";
 import Link from "next/link";
+import { createPublicClient } from "@/lib/supabase/public";
 import { useEffect, useState } from "react";
 
-export function GuestbookTicker({ entries }: { entries: GuestbookEntry[] }) {
+const MAX_ENTRIES = 12;
+
+export function GuestbookTicker({ entries: initial }: { entries: GuestbookEntry[] }) {
+  const [entries, setEntries] = useState(initial);
   const [i, setI] = useState(0);
+
+  // Show new signatures as they arrive (RLS still hides unapproved rows).
+  useEffect(() => {
+    const supabase = createPublicClient();
+    if (!supabase) return;
+    const channel = supabase
+      .channel("guestbook-live")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "guestbook_entries" },
+        (payload) => {
+          const row = payload.new as GuestbookEntry;
+          if (!row?.id || !row.body) return;
+          setEntries((prev) =>
+            prev.some((e) => e.id === row.id) ? prev : [row, ...prev].slice(0, MAX_ENTRIES),
+          );
+          setI(0);
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, []);
 
   useEffect(() => {
     if (entries.length <= 1) return;

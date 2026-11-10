@@ -1,3 +1,5 @@
+import { RetroWindow } from "@/components/RetroWindow";
+
 const DAYS = 90;
 const MAX_PIXELS = 5;
 const PIXEL_PX = 8;
@@ -44,24 +46,17 @@ export function ActivityTimeline({ countsByDate }: Props) {
   const colWidth = PIXEL_PX + GAP_PX;
 
   return (
-    <div
-      className="border-2 border-border bg-surface"
-      style={{ boxShadow: "4px 4px 0 0 var(--border)" }}
-    >
-      <div
-        className="flex items-center justify-between border-b-2 border-border bg-title-bar px-3 py-2"
-        style={{ fontFamily: "var(--font-heading)" }}
-      >
-        <span className="font-heading text-lg text-title-bar-text">
-          upload activity
-        </span>
+    <RetroWindow
+      title="upload activity"
+      accessory={
         <span
           className="font-mono text-xs text-title-bar-text opacity-70"
           style={{ fontFamily: "var(--font-mono-chat)" }}
         >
           {totalUploads} total
         </span>
-      </div>
+      }
+    >
 
       <div className="overflow-x-auto touch-pan-x p-3 pb-2">
         {/* Pixel columns */}
@@ -146,6 +141,6 @@ export function ActivityTimeline({ countsByDate }: Props) {
           last 90 days &middot; each pixel = 1 livefeed entry &middot; max {MAX_PIXELS} shown
         </p>
       </div>
-    </div>
+    </RetroWindow>
   );
 }

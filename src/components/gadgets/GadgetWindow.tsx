@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
+import { RetroWindow } from "@/components/RetroWindow";
 
-/** Shared retro window frame for the homepage side gadgets. */
+/** Compact window frame for the homepage side gadgets. */
 export function GadgetWindow({
   title,
   children,
@@ -11,18 +12,8 @@ export function GadgetWindow({
   accessory?: ReactNode;
 }) {
   return (
-    <div
-      className="border-2 border-border bg-surface"
-      style={{ boxShadow: "3px 3px 0 0 var(--border)" }}
-    >
-      <div
-        className="flex items-center justify-between border-b-2 border-border bg-title-bar px-2 py-1"
-        style={{ fontFamily: "var(--font-heading)" }}
-      >
-        <span className="font-heading text-sm text-title-bar-text">{title}</span>
-        {accessory}
-      </div>
+    <RetroWindow size="sm" title={title} accessory={accessory}>
       {children}
-    </div>
+    </RetroWindow>
   );
 }

@@ -1,32 +1,20 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { DbMessage, DbPost } from "@/lib/types";
 import { PostReactions } from "@/components/PostReactions";
+import { ChatMessage } from "@/components/ChatMessage";
+import { ChatReplay } from "@/components/ChatReplay";
+import { getSenderColor } from "@/lib/chat-colors";
 
 type Props = {
   post: DbPost;
   messages: DbMessage[];
   /** When true (default), title bar links to the post detail page. */
   linkToPost?: boolean;
+  /** When true, messages replay one-by-one with a typing indicator instead of rendering instantly. */
+  animated?: boolean;
 };
 
-const SENDER_COLORS = [
-  "text-[#7b68ee]", // medium slate blue
-  "text-[#20b2aa]", // light sea green
-  "text-[#cd853f]", // peru
-  "text-[#db7093]", // pale violet red
-  "text-[#3cb371]", // medium sea green
-  "text-[#9370db]", // medium purple
-];
-
-function getSenderColor(sender: string, palette: Map<string, string>): string {
-  if (palette.has(sender)) return palette.get(sender)!;
-  const color = SENDER_COLORS[palette.size % SENDER_COLORS.length];
-  palette.set(sender, color);
-  return color;
-}
-
-export function ChatRoomWindow({ post, messages, linkToPost = true }: Props) {
+export function ChatRoomWindow({ post, messages, linkToPost = true, animated = false }: Props) {
   const ownerHandle = post.my_handle ?? process.env.NEXT_PUBLIC_SCREEN_NAME ?? "soapie";
 
   const titleInner = (
@@ -80,6 +68,8 @@ export function ChatRoomWindow({ post, messages, linkToPost = true }: Props) {
       <div className="max-h-[520px] overflow-y-auto bg-chat-bg p-4 font-mono text-sm">
         {messages.length === 0 ? (
           <p className="text-muted">(no messages yet)</p>
+        ) : animated ? (
+          <ChatReplay messages={messages} ownerHandle={ownerHandle} postId={post.id} />
         ) : (
           <div className="space-y-3">
             {messages.map((m, i) => {
@@ -89,48 +79,14 @@ export function ChatRoomWindow({ post, messages, linkToPost = true }: Props) {
                 : getSenderColor(m.sender, colorPalette);
 
               return (
-                <div
+                <ChatMessage
                   key={m.id}
-                  className={`animate-slide-in flex flex-col gap-0.5 ${isOwner ? "items-end" : "items-start"}`}
+                  message={m}
+                  isOwner={isOwner}
+                  color={color}
+                  className="animate-slide-in"
                   style={{ animationDelay: `${i * 0.04}s` }}
-                >
-                  <p className={`text-[11px] font-semibold ${color}`}>
-                    {m.sender}
-                    {m.time_label ? (
-                      <span className="ml-1.5 font-normal text-muted">({m.time_label})</span>
-                    ) : null}
-                  </p>
-
-                  {m.kind === "text" ? (
-                    <div
-                      className={`max-w-[80%] inline-block rounded-sm px-2.5 py-1.5 leading-relaxed ${
-                        isOwner
-                          ? "bg-surface-2 border border-border"
-                          : "bg-surface border border-border"
-                      }`}
-                    >
-                      <span className="text-text">{m.body ?? ""}</span>
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      {m.image_url ? (
-                        <div className="inline-block border-2 border-border bg-page-bg p-1">
-                          <Image
-                            src={m.image_url}
-                            alt={m.image_caption ?? ""}
-                            width={400}
-                            height={300}
-                            className="h-auto max-w-full object-contain"
-                            sizes="(max-width: 768px) 100vw, 400px"
-                          />
-                        </div>
-                      ) : null}
-                      {m.image_caption ? (
-                        <p className="text-[11px] text-muted italic">{m.image_caption}</p>
-                      ) : null}
-                    </div>
-                  )}
-                </div>
+                />
               );
             })}
           </div>

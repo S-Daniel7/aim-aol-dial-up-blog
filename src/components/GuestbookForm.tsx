@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { playDing } from "@/lib/aim-sounds";
+import { getVisitorName } from "@/lib/visitor-identity";
 
 const LOADING_STAGES = [
   "connecting...",
@@ -19,6 +20,11 @@ export function GuestbookForm() {
   const [stageIndex, setStageIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  // Prefill with the visitor's persistent screen name (still editable).
+  useEffect(() => {
+    setName((n) => n || getVisitorName());
+  }, []);
 
   useEffect(() => {
     if (!busy) { setStageIndex(0); return; }

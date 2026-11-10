@@ -3,6 +3,8 @@ import { DialUpStatus } from "@/components/gadgets/DialUpStatus";
 import { GuestbookTicker } from "@/components/gadgets/GuestbookTicker";
 import { VisitorMap } from "@/components/gadgets/VisitorMap";
 import { WeatherNote } from "@/components/gadgets/WeatherNote";
+import { TodoNote } from "@/components/gadgets/TodoNote";
+import { ReminderNote } from "@/components/gadgets/ReminderNote";
 import { NowPlayingWidget } from "@/components/NowPlayingWidget";
 import type { GuestbookEntry } from "@/lib/types";
 import type { VisitorCount } from "@/lib/visitors-db";
@@ -20,6 +22,8 @@ function LeftGadgets({ weather }: { weather: Weather | null }) {
       <Clock />
       <DialUpStatus />
       <WeatherNote weather={weather} />
+      <TodoNote />
+      <ReminderNote />
     </>
   );
 }

@@ -1,8 +1,11 @@
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { RetroWindow } from "@/components/RetroWindow";
 
 export const revalidate = 300;
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export const metadata: Metadata = {
   title: "Links",
@@ -59,17 +62,7 @@ export default async function LinksPage() {
       ) : (
         <div className="space-y-6">
           {categories.map((cat) => (
-            <div
-              key={cat}
-              className="border-2 border-border bg-surface"
-              style={{ boxShadow: "4px 4px 0 0 var(--border)" }}
-            >
-              <div
-                className="border-b-2 border-border bg-title-bar px-3 py-2 font-heading text-lg text-title-bar-text"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                {cat}
-              </div>
+            <RetroWindow key={cat} title={cat}>
               <div className="divide-y divide-border">
                 {grouped[cat].map((link, i) => (
                   <div
@@ -97,10 +90,32 @@ export default async function LinksPage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </RetroWindow>
           ))}
         </div>
       )}
+
+      <RetroWindow title="link to me ✦">
+        <div className="space-y-3 p-4">
+          <a
+            href={siteUrl}
+            className="flex items-center justify-center border-2 border-border bg-accent font-heading text-lg text-accent-contrast no-underline"
+            style={{ width: 88, height: 31, fontFamily: "var(--font-heading)" }}
+          >
+            ★ soapie ★
+          </a>
+          <p className="font-mono text-[10px] text-muted" style={{ fontFamily: "var(--font-mono-chat)" }}>
+            copy this onto your own page:
+          </p>
+          <textarea
+            readOnly
+            rows={2}
+            value={`<a href="${siteUrl}">soapie</a>`}
+            className="w-full border-2 border-border bg-page-bg p-2 font-mono text-[11px] text-text"
+            style={{ fontFamily: "var(--font-mono-chat)" }}
+          />
+        </div>
+      </RetroWindow>
 
       <p
         className="border-t border-border pt-4 font-mono text-[10px] text-muted"

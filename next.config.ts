@@ -16,8 +16,9 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      // Next.js requires unsafe-inline for hydration scripts
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      // Next.js requires unsafe-inline for hydration scripts; unsafe-eval is
+      // only needed by the dev server (React Refresh), so drop it in production.
+      `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline'",
       // Supabase storage for uploads; Spotify CDN for album art
       "img-src 'self' data: blob: https://*.supabase.co https://i.scdn.co",
