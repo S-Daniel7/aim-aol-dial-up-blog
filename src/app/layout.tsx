@@ -3,6 +3,7 @@ import { VT323 } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SiteChrome } from "@/components/SiteChrome";
+import { Analytics } from "@vercel/analytics/next";
 
 const vt323 = VT323({
   weight: "400",
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
   description:
     "a personal corner of the internet — aim chat logs, live thoughts, and things to remember",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  alternates: { types: { "application/rss+xml": "/feed.xml" } },
   openGraph: {
     type: "website",
     siteName: "soapie",
@@ -25,7 +27,7 @@ export const metadata: Metadata = {
     description: "a personal corner of the internet — aim chat logs, live thoughts, and things to remember",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "soapie",
     description: "a personal corner of the internet",
   },
@@ -42,6 +44,7 @@ export default function RootLayout({
         <ThemeProvider>
           <SiteChrome>{children}</SiteChrome>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
