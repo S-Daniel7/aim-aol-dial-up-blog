@@ -1,5 +1,6 @@
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Metadata } from "next";
+import { RetroWindow } from "@/components/RetroWindow";
 
 export const revalidate = 30;
 
@@ -87,16 +88,7 @@ export default async function StatsPage() {
         </p>
       </div>
 
-      <div
-        className="border-2 border-border bg-surface"
-        style={{ boxShadow: "4px 4px 0 0 var(--border)" }}
-      >
-        <div
-          className="border-b-2 border-border bg-title-bar px-3 py-2 font-heading text-lg text-title-bar-text"
-          style={{ fontFamily: "var(--font-heading)" }}
-        >
-          site_stats.exe
-        </div>
+      <RetroWindow title="site_stats.exe">
         <div className="divide-y divide-border">
           {rows.map((row, i) => (
             <div
@@ -125,7 +117,7 @@ export default async function StatsPage() {
         >
           ✦ updated in real time · {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
         </div>
-      </div>
+      </RetroWindow>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import type { SiteCurrently } from "@/lib/types";
+import { RetroWindow } from "@/components/RetroWindow";
 
 const ROWS: { key: keyof Omit<SiteCurrently, "updated_at">; label: string }[] = [
   { key: "reading", label: "reading" },
@@ -12,16 +13,7 @@ export function CurrentlyWidget({ currently }: { currently: SiteCurrently }) {
   if (!filled.length) return null;
 
   return (
-    <div
-      className="border-2 border-border bg-surface"
-      style={{ boxShadow: "4px 4px 0 0 var(--border)" }}
-    >
-      <div
-        className="border-b-2 border-border bg-title-bar px-3 py-2 font-heading text-lg text-title-bar-text"
-        style={{ fontFamily: "var(--font-heading)" }}
-      >
-        currently
-      </div>
+    <RetroWindow title="currently">
       <div className="divide-y divide-border">
         {filled.map(({ key, label }) => (
           <div key={key} className="flex gap-3 px-3 py-2">
@@ -35,6 +27,6 @@ export function CurrentlyWidget({ currently }: { currently: SiteCurrently }) {
           </div>
         ))}
       </div>
-    </div>
+    </RetroWindow>
   );
 }
