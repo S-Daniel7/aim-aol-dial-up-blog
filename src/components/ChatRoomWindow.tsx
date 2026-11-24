@@ -4,6 +4,7 @@ import { PostReactions } from "@/components/PostReactions";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatReplay } from "@/components/ChatReplay";
 import { getSenderColor } from "@/lib/chat-colors";
+import { monthKey } from "@/lib/post-meta";
 
 type Props = {
   post: DbPost;
@@ -57,11 +58,17 @@ export function ChatRoomWindow({ post, messages, linkToPost = true, animated = f
         {post.blurb ? (
           <span className="mr-3 italic text-text">{post.blurb}</span>
         ) : null}
-        <span>
-          {new Date(post.created_at).toLocaleDateString(undefined, {
+        <Link href={`/archive/${monthKey(post.publish_at)}`} className="text-inherit hover:underline">
+          {new Date(post.publish_at).toLocaleDateString(undefined, {
             dateStyle: "medium",
           })}
-        </span>
+        </Link>
+        {post.is_pinned ? <span className="ml-3">📌 pinned</span> : null}
+        {(post.tags ?? []).map((tag) => (
+          <Link key={tag} href={`/tags/${tag}`} className="ml-3 text-link">
+            #{tag}
+          </Link>
+        ))}
       </div>
 
       {/* Message area */}

@@ -21,7 +21,7 @@ export async function GET() {
       <title>${esc(p.title ?? "chat log")}</title>
       <link>${url}</link>
       <guid isPermaLink="true">${url}</guid>
-      <pubDate>${new Date(p.created_at).toUTCString()}</pubDate>
+      <pubDate>${new Date(p.publish_at).toUTCString()}</pubDate>
       <description>${esc(p.blurb ?? "a saved aim chat log")}</description>
     </item>`;
     })

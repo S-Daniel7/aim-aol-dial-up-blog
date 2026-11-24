@@ -7,17 +7,20 @@ export async function GET() {
   const supabase = createPublicClient();
   if (!supabase) return NextResponse.json({});
 
-  const newest = async (table: string) => {
+  const newest = async (table: string, column = "created_at") => {
     const { data } = await supabase
       .from(table)
-      .select("created_at")
-      .order("created_at", { ascending: false })
+      .select(column)
+      .order(column, { ascending: false })
       .limit(1);
-    return (data?.[0] as { created_at?: string } | undefined)?.created_at ?? null;
+    return (
+      (data?.[0] as unknown as Record<string, string> | undefined)?.[column] ??
+      null
+    );
   };
 
   const [home, live, guestbook] = await Promise.all([
-    newest("posts"),
+    newest("posts", "publish_at"),
     newest("live_feed_entries"),
     newest("guestbook_entries"),
   ]);

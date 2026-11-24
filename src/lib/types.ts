@@ -5,6 +5,9 @@ export type DbPost = {
   blurb: string | null;
   my_handle: string | null;
   created_at: string;
+  publish_at: string;
+  is_pinned: boolean;
+  tags: string[];
 };
 
 export type DbMessage = {

@@ -10,8 +10,10 @@ A personal corner of the internet styled like 2003: saved AIM chat logs, away me
 
 **For visitors**
 - **Chat logs.** Posts are AIM conversations that replay message by message with a typing indicator. Replay respects `prefers-reduced-motion` and only plays once per visitor.
+- **Tags and archive.** Posts can be tagged (`/tags/<tag>`) and browsed by month (`/archive/YYYY-MM`). Pinned posts stay on top.
 - **Live feed.** Short thoughts with images, plus a calendar and an activity heatmap.
 - **Pinboard.** A free-form, draggable board of notes and images.
+- **Comments.** Visitors can comment on posts. Comments are held for approval in `/admin/comments`, are rate-limited, and use a honeypot field (migration `022`).
 - **Guestbook, ask box, "i was here" stamps, and post reactions.** Visitor text is profanity-filtered, and submissions are rate-limited by hashed IP.
 - **Away message and mood.** The away message comes with an archive, plus a "nudge" button.
 - **Live buddy list.** Supabase Realtime Presence shows who is on the site right now, each with a generated screen name that stays the same between visits. Optional AIM sign-on and sign-off sounds play when buddies come and go.
@@ -23,7 +25,7 @@ A personal corner of the internet styled like 2003: saved AIM chat logs, away me
 - **Three themes** (classic, AIM console, high contrast) and optional synthesized AIM sounds through the Web Audio API.
 
 **For the owner (`/admin`)**
-- A chat-log composer that can parse pasted AIM transcripts. It also handles image uploads.
+- A chat-log composer that can parse pasted AIM transcripts. It also handles image uploads, tags, pinning and **scheduled publishing** (future posts stay hidden by RLS until their time; migration `021`).
 - Editors for the live feed, pinboard, guestbook moderation, ask inbox, stamps, links, about page and status.
 
 ## Tech stack
