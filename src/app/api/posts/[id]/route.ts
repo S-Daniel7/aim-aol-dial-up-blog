@@ -1,5 +1,7 @@
 import { EDITOR_ROLES, getWorkspaceAccess } from "@/lib/admin-session";
 import { parseChatLines } from "@/lib/parseChat";
+import { parsePublishAt, parseTags } from "@/lib/post-meta";
+import { POST_COLUMNS } from "@/lib/posts";
 import { slugify } from "@/lib/slug";
 import { getServiceClient } from "@/lib/supabase/service";
 import { NextRequest, NextResponse } from "next/server";
@@ -25,6 +27,9 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     slug?: string;
     blurb?: string | null;
     myHandle?: string | null;
+    publishAt?: string | null;
+    isPinned?: boolean;
+    tags?: string[] | string;
     chatText?: string;
     images?: ImagePayload[];
   };
@@ -43,6 +48,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   const slug = slugify((body.slug ?? "").trim() || title);
   const blurb = body.blurb?.trim() || null;
   const myHandle = body.myHandle?.trim() || null;
+  const publishAt = parsePublishAt(body.publishAt);
+  if ("error" in publishAt) {
+    return NextResponse.json({ error: publishAt.error }, { status: 400 });
+  }
   const chatText = body.chatText ?? "";
   let textMessages: ReturnType<typeof parseChatLines> = [];
   try {
@@ -106,10 +115,20 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   const { data: post, error: postErr } = await supabase
     .from("posts")
-    .update({ title, slug, blurb, my_handle: myHandle })
+    .update({
+      title,
+      slug,
+      blurb,
+      my_handle: myHandle,
+      tags: parseTags(body.tags),
+      is_pinned: body.isPinned === true,
+      // A blank publish time keeps the existing one; the admin UI sends the
+      // current time to mean "publish now".
+      ...(publishAt.value ? { publish_at: publishAt.value } : {}),
+    })
     .eq("id", id)
     .eq("workspace_id", access.workspaceId)
-    .select("id,title,slug,blurb,my_handle,created_at")
+    .select(POST_COLUMNS)
     .single();
   if (postErr) {
     const status = postErr.code === "23505" ? 409 : 500;

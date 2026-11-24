@@ -1,5 +1,7 @@
 import { EDITOR_ROLES, getWorkspaceAccess } from "@/lib/admin-session";
 import { parseChatLines } from "@/lib/parseChat";
+import { parsePublishAt, parseTags } from "@/lib/post-meta";
+import { POST_COLUMNS } from "@/lib/posts";
 import { slugify } from "@/lib/slug";
 import { getServiceClient } from "@/lib/supabase/service";
 import { createPublicClient } from "@/lib/supabase/public";
@@ -13,16 +15,24 @@ export type ImagePayload = {
 };
 
 export async function GET(req: NextRequest) {
-  const supabase = createPublicClient();
+  // Signed-in editors also see scheduled (future) posts for their workspace;
+  // everyone else goes through the anon client, where RLS hides them.
+  const access = await getWorkspaceAccess(req, EDITOR_ROLES);
+  const supabase = access
+    ? (getServiceClient() ?? createPublicClient())
+    : createPublicClient();
   if (!supabase) {
     return NextResponse.json({ posts: [] });
   }
   const includeMessages =
     req.nextUrl.searchParams.get("includeMessages") === "1";
-  const { data: posts, error } = await supabase
+  let query = supabase
     .from("posts")
-    .select("id,title,slug,blurb,my_handle,created_at")
-    .order("created_at", { ascending: false });
+    .select(POST_COLUMNS)
+    .order("is_pinned", { ascending: false })
+    .order("publish_at", { ascending: false });
+  if (access) query = query.eq("workspace_id", access.workspaceId);
+  const { data: posts, error } = await query;
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -64,6 +74,9 @@ export async function POST(req: NextRequest) {
     slug?: string;
     blurb?: string | null;
     myHandle?: string | null;
+    publishAt?: string | null;
+    isPinned?: boolean;
+    tags?: string[] | string;
     chatText?: string;
     images?: ImagePayload[];
   };
@@ -79,6 +92,11 @@ export async function POST(req: NextRequest) {
   const slug = slugify((body.slug ?? "").trim() || title);
   const blurb = body.blurb?.trim() || null;
   const myHandle = body.myHandle?.trim() || null;
+  const publishAt = parsePublishAt(body.publishAt);
+  if ("error" in publishAt) {
+    return NextResponse.json({ error: publishAt.error }, { status: 400 });
+  }
+  const tags = parseTags(body.tags);
   const chatText = body.chatText ?? "";
   let textMessages: ReturnType<typeof parseChatLines> = [];
   try {
@@ -96,6 +114,10 @@ export async function POST(req: NextRequest) {
       slug,
       blurb,
       my_handle: myHandle,
+      tags,
+      is_pinned: body.isPinned === true,
+      // Omit when empty so the column default (now()) applies.
+      ...(publishAt.value ? { publish_at: publishAt.value } : {}),
       author_id: access.user.id,
       workspace_id: access.workspaceId,
       visibility: "public",

@@ -1,3 +1,4 @@
+import { monthKey } from "@/lib/post-meta";
 import { fetchPosts } from "@/lib/posts";
 import type { MetadataRoute } from "next";
 
@@ -30,8 +31,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const postEntries: MetadataRoute.Sitemap = posts.map((post) => ({
     url: `${siteUrl}/post/${post.slug}`,
-    lastModified: new Date(post.created_at),
+    lastModified: new Date(post.publish_at),
   }));
 
-  return [...staticEntries, ...postEntries];
+  const tags = new Set(posts.flatMap((post) => post.tags ?? []));
+  const months = new Set(posts.map((post) => monthKey(post.publish_at)));
+  const taxonomyEntries: MetadataRoute.Sitemap = [
+    ...[...tags].map((tag) => ({ url: `${siteUrl}/tags/${tag}` })),
+    ...[...months].map((m) => ({ url: `${siteUrl}/archive/${m}` })),
+  ];
+
+  return [...staticEntries, ...postEntries, ...taxonomyEntries];
 }

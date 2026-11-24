@@ -5,6 +5,7 @@ import {
   serializeChatLines,
   type ChatLineDraft,
 } from "@/lib/parseChat";
+import { toDatetimeLocal } from "@/lib/post-meta";
 import type { DbMessage, DbPost } from "@/lib/types";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -25,6 +26,9 @@ type Draft = {
   slug: string;
   blurb: string;
   myHandle: string;
+  tags: string;
+  publishAt: string;
+  isPinned: boolean;
   handlesHint: string;
   lines: EditableLine[];
   images: PendingImage[];
@@ -50,6 +54,9 @@ function blankDraft(): Draft {
     slug: "",
     blurb: "",
     myHandle: "",
+    tags: "",
+    publishAt: "",
+    isPinned: false,
     handlesHint: "",
     lines: [newLine()],
     images: [],
@@ -80,6 +87,9 @@ function draftFromPost(post: DbPost, messages: DbMessage[]): Draft {
     slug: post.slug,
     blurb: post.blurb ?? "",
     myHandle: post.my_handle ?? "",
+    tags: (post.tags ?? []).join(", "),
+    publishAt: toDatetimeLocal(post.publish_at),
+    isPinned: post.is_pinned ?? false,
     handlesHint: handles.join("\n"),
     lines: textMessages.length
       ? textMessages.map((m) =>
@@ -296,6 +306,12 @@ export function AdminPostManager() {
           slug: draft.slug.trim(),
           blurb: draft.blurb.trim() || null,
           myHandle: draft.myHandle.trim() || null,
+          tags: draft.tags,
+          isPinned: draft.isPinned,
+          // Convert the timezone-less input in the browser; see AdminComposer.
+          publishAt: draft.publishAt
+            ? new Date(draft.publishAt).toISOString()
+            : null,
           chatText,
           images: draft.images.map((image) => ({
             url: image.url,
@@ -395,6 +411,51 @@ export function AdminPostManager() {
                         className="mt-0.5 w-full border-2 border-border bg-page-bg px-2 py-1.5 text-sm text-text"
                       />
                     </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div>
+                      <label className="block text-xs text-muted">Tags</label>
+                      <input
+                        value={draft.tags}
+                        onChange={(e) => updateDraft({ tags: e.target.value })}
+                        className="mt-0.5 w-full border-2 border-border bg-page-bg px-2 py-1.5 text-sm text-text"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-muted">Publish at</label>
+                      <div className="mt-0.5 flex gap-2">
+                        <input
+                          type="datetime-local"
+                          value={draft.publishAt}
+                          onChange={(e) =>
+                            updateDraft({ publishAt: e.target.value })
+                          }
+                          className="w-full border-2 border-border bg-page-bg px-2 py-1.5 text-sm text-text"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateDraft({
+                              publishAt: toDatetimeLocal(new Date().toISOString()),
+                            })
+                          }
+                          className="whitespace-nowrap text-xs text-link underline"
+                        >
+                          now
+                        </button>
+                      </div>
+                    </div>
+                    <label className="flex items-center gap-2 self-end pb-1.5 text-sm text-text">
+                      <input
+                        type="checkbox"
+                        checked={draft.isPinned}
+                        onChange={(e) =>
+                          updateDraft({ isPinned: e.target.checked })
+                        }
+                      />
+                      Pin to top
+                    </label>
                   </div>
 
                   <div className="border-2 border-border bg-page-bg p-3 space-y-3">
@@ -609,7 +670,17 @@ export function AdminPostManager() {
                       </p>
                       <p className="text-xs text-muted">
                         /post/{item.post.slug} ·{" "}
-                        {new Date(item.post.created_at).toLocaleString()}
+                        {new Date(item.post.publish_at).toLocaleString()}
+                        {new Date(item.post.publish_at) > new Date() && (
+                          <span className="ml-2 border border-border px-1 text-accent">
+                            scheduled
+                          </span>
+                        )}
+                        {item.post.is_pinned && (
+                          <span className="ml-2 border border-border px-1">
+                            pinned
+                          </span>
+                        )}
                       </p>
                     </div>
                     <div className="flex gap-3 text-sm">

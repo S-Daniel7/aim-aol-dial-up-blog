@@ -47,6 +47,9 @@ export function AdminComposer() {
   const [slug, setSlug] = useState("");
   const [blurb, setBlurb] = useState("");
   const [myHandle, setMyHandle] = useState("");
+  const [tags, setTags] = useState("");
+  const [publishAt, setPublishAt] = useState("");
+  const [isPinned, setIsPinned] = useState(false);
   const [handlesHint, setHandlesHint] = useState("alice\nbob");
   const [lines, setLines] = useState(() => [
     newLine({
@@ -187,6 +190,11 @@ export function AdminComposer() {
           slug: slug.trim() || undefined,
           blurb: blurb.trim() || null,
           myHandle: myHandle.trim() || null,
+          tags,
+          isPinned,
+          // datetime-local has no timezone: convert in the browser so the
+          // server (UTC) stores the instant the owner meant.
+          publishAt: publishAt ? new Date(publishAt).toISOString() : null,
           chatText,
           images: images.map((im) => ({
             url: im.url,
@@ -202,6 +210,15 @@ export function AdminComposer() {
         return;
       }
       const s = (data as { slug?: string }).slug;
+      const scheduled = !!publishAt && new Date(publishAt) > new Date();
+      if (scheduled) {
+        // A scheduled post 404s publicly until its time, so stay here.
+        setStatus(
+          `Scheduled for ${new Date(publishAt).toLocaleString()} (/post/${s}).`,
+        );
+        router.refresh();
+        return;
+      }
       setStatus("Saved.");
       if (s) router.push(`/post/${s}`);
       router.refresh();
@@ -251,6 +268,37 @@ export function AdminComposer() {
               className="mt-1 w-full border-2 border-border bg-page-bg px-3 py-2 text-text"
             />
           </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <label className="block text-sm text-muted">Tags (comma separated)</label>
+            <input
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="music, late-night"
+              className="mt-1 w-full border-2 border-border bg-page-bg px-3 py-2 text-text"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-muted">
+              Publish at (blank = now)
+            </label>
+            <input
+              type="datetime-local"
+              value={publishAt}
+              onChange={(e) => setPublishAt(e.target.value)}
+              className="mt-1 w-full border-2 border-border bg-page-bg px-3 py-2 text-text"
+            />
+          </div>
+          <label className="flex items-center gap-2 self-end pb-2 text-sm text-text">
+            <input
+              type="checkbox"
+              checked={isPinned}
+              onChange={(e) => setIsPinned(e.target.checked)}
+            />
+            Pin to top
+          </label>
         </div>
 
         <div className="border-2 border-border bg-page-bg p-4 space-y-3">

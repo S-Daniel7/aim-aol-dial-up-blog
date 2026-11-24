@@ -1,4 +1,5 @@
 import { ChatRoomWindow } from "@/components/ChatRoomWindow";
+import { CommentSection } from "@/components/CommentSection";
 import { fetchPostBySlug } from "@/lib/posts";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -37,6 +38,7 @@ export default async function PostPage({ params }: Props) {
         linkToPost={false}
         animated
       />
+      <CommentSection postId={data.post.id} />
       <p className="text-sm text-muted">
         <Link href="/">← back to all rooms</Link> &nbsp;·&nbsp;{" "}
         <Link href="/board">pinboard</Link> &nbsp;·&nbsp;{" "}

@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { href: "/admin/live", label: "Live feed" },
   { href: "/admin/board", label: "Board" },
   { href: "/admin/guestbook", label: "Guestbook" },
+  { href: "/admin/comments", label: "Comments" },
   { href: "/admin/ask", label: "Ask box" },
   { href: "/admin/stamps", label: "Stamps" },
 ];

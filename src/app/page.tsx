@@ -46,8 +46,8 @@ export default async function Home() {
     const dates: string[] = [];
     if ((recentEntries as { created_at: string }[]).length)
       dates.push((recentEntries as { created_at: string }[])[0].created_at);
-    if ((posts as { created_at: string }[]).length)
-      dates.push((posts as { created_at: string }[])[0].created_at);
+    // Posts are pinned-first, so take the newest publish time explicitly.
+    for (const p of posts as { publish_at: string }[]) dates.push(p.publish_at);
     dates.sort((a, b) => b.localeCompare(a));
     if (!dates[0]) return null;
     return new Date(dates[0]).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
